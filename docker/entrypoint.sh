@@ -6,6 +6,10 @@ PORT=${PORT:-80}
 sed -i "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/" /etc/apache2/sites-available/000-default.conf
 
+# Ensure exactly one Apache MPM is enabled (mod_php requires prefork)
+a2dismod mpm_event mpm_worker >/dev/null 2>&1 || true
+a2enmod mpm_prefork >/dev/null 2>&1 || true
+
 cd /app
 
 # Ensure writable dirs exist (fresh container)
