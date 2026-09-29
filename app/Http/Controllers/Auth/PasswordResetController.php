@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Concerns\VerifiesTurnstile;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\View\View;
 
 class PasswordResetController extends Controller
 {
+    use VerifiesTurnstile;
+
     public function showForgot(): View
     {
         return view('auth.forgot-password');
@@ -21,6 +24,9 @@ class PasswordResetController extends Controller
 
     public function sendLink(Request $request): RedirectResponse
     {
+        // Phase 6: bot check before sending any reset email.
+        $this->verifyTurnstile($request, 'forgot');
+
         $request->validate(['email' => ['required', 'email']]);
 
         $status = Password::sendResetLink($request->only('email'));

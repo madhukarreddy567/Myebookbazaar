@@ -1,41 +1,32 @@
 @extends('layouts.app')
 
-@section('title', 'Reset Password — MyEbookBazaar')
+@section('title', 'Reset password — MyEbookBazaar')
 
 @section('content')
 <div class="max-w-md mx-auto px-4 py-12">
-    <div class="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
-        <h1 class="font-heading font-bold text-2xl text-brand-teal text-center">Choose a new password</h1>
+    <x-ui.card class="p-6 md:p-8">
+        <div class="text-center">
+            <img src="{{ asset('images/stitch/logo.jpg') }}" alt="MyEbookBazaar" class="w-12 h-12 rounded-2xl object-cover mx-auto mb-3 shadow-sm">
+            <h1 class="display-md text-teal-900 uppercase">Choose a new password</h1>
+        </div>
 
-        <form method="POST" action="{{ route('password.update') }}" class="mt-6 space-y-4">
+        <form method="POST" action="{{ route('password.update') }}" class="mt-6">
             @csrf
             <input type="hidden" name="token" value="{{ $token }}">
 
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input id="email" name="email" type="email" required value="{{ $email ?? old('email') }}"
-                       class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700 @error('email') border-red-500 @enderror">
-                @error('email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-            </div>
+            <x-ui.input label="Email" name="email" type="email" :value="$email ?? old('email')"
+                        required :error="$errors->first('email')" />
 
-            <div>
-                <label for="password" class="block text-sm font-medium text-gray-700">New password</label>
-                <input id="password" name="password" type="password" required autocomplete="new-password"
-                       class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700 @error('password') border-red-500 @enderror">
-                <p class="text-xs text-gray-500 mt-1">Min 8 characters, with upper + lower case and a number.</p>
-                @error('password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-            </div>
+            <x-ui.input label="New password" name="password" type="password"
+                        required autocomplete="new-password"
+                        hint="Min 8 characters, with upper + lower case and a number."
+                        :error="$errors->first('password')" />
 
-            <div>
-                <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm new password</label>
-                <input id="password_confirmation" name="password_confirmation" type="password" required
-                       class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700">
-            </div>
+            <x-ui.input label="Confirm new password" name="password_confirmation" type="password"
+                        required autocomplete="new-password" />
 
-            <button type="submit" class="w-full bg-brand-teal hover:bg-brand-teal-darker text-white font-semibold py-3 rounded-full transition">
-                Reset Password
-            </button>
+            <x-ui.button type="submit" class="w-full">Save new password</x-ui.button>
         </form>
-    </div>
+    </x-ui.card>
 </div>
 @endsection

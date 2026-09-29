@@ -1,29 +1,29 @@
 @extends('layouts.app')
 
-@section('title', 'Forgot Password — MyEbookBazaar')
+@section('title', 'Forgot password — MyEbookBazaar')
 
 @section('content')
 <div class="max-w-md mx-auto px-4 py-12">
-    <div class="bg-white rounded-3xl shadow-lg p-8 border border-gray-100">
-        <h1 class="font-heading font-bold text-2xl text-brand-teal text-center">Reset password</h1>
-        <p class="text-sm text-gray-500 text-center mt-1">Enter your email and we'll send you a reset link.</p>
+    <x-ui.card class="p-6 md:p-8">
+        <div class="text-center">
+            <img src="{{ asset('images/stitch/logo.jpg') }}" alt="MyEbookBazaar" class="w-12 h-12 rounded-2xl object-cover mx-auto mb-3 shadow-sm">
+            <h1 class="display-md text-teal-900 uppercase">Reset password</h1>
+            <p class="text-mutedtext text-sm mt-1">Enter your email and we will send you a reset link.</p>
+        </div>
 
-        <form method="POST" action="{{ route('password.email') }}" class="mt-6 space-y-4">
+        <form method="POST" action="{{ route('password.email') }}" class="mt-6">
             @csrf
-            <div>
-                <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
-                <input id="email" name="email" type="email" required value="{{ old('email') }}"
-                       class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700 @error('email') border-red-500 @enderror">
-                @error('email') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-            </div>
-            <button type="submit" class="w-full bg-brand-teal hover:bg-brand-teal-darker text-white font-semibold py-3 rounded-full transition">
-                Send Reset Link
-            </button>
+            <x-ui.input label="Email" name="email" type="email" :value="old('email')"
+                        required :error="$errors->first('email')" />
+
+            <x-turnstile form="forgot" />
+
+            <x-ui.button type="submit" class="w-full mt-4">Send reset link</x-ui.button>
         </form>
 
-        <p class="text-sm text-center text-gray-600 mt-5">
-            <a href="{{ route('login') }}" class="text-brand-teal font-semibold hover:underline">Back to login</a>
+        <p class="text-sm text-center text-mutedtext mt-5">
+            <a href="{{ route('login') }}" class="text-teal-700 font-bold hover:underline underline-offset-4">Back to login</a>
         </p>
-    </div>
+    </x-ui.card>
 </div>
 @endsection

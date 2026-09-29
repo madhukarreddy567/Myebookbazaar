@@ -1,8 +1,7 @@
+@import "./tokens.css";
+@import "./ui.css";
+@import "./admin.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Alpine.js: hide cloaked elements until Alpine boots. */
-[x-cloak] {
-    display: none !important;
-}

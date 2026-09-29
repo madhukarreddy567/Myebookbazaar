@@ -9,13 +9,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Like Laravel's "verified" middleware, but honours the
- * EMAIL_VERIFICATION_ENABLED switch — when disabled, everyone passes.
+ * Settings Center 'Email verification required' switch (falls back to EMAIL_VERIFICATION_ENABLED) — when disabled, everyone passes.
  */
 class EnsureEmailVerifiedIfEnabled
 {
     public function handle(Request $request, Closure $next, ?string $redirectToRoute = null): Response
     {
-        if (! config('app.email_verification_enabled')) {
+        if (! settings_bool('features.email_verification', true)) {
             return $next($request);
         }
 

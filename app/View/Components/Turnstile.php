@@ -2,24 +2,35 @@
 
 namespace App\View\Components;
 
+use App\Services\TurnstileService;
 use Illuminate\View\Component;
 use Illuminate\View\View;
 
 /**
- * Cloudflare Turnstile widget.
+ * Phase 6: Cloudflare Turnstile widget.
  *
- * Renders the widget only when TURNSTILE_SITE_KEY is configured;
- * otherwise renders nothing (disabled). Server-side verification
- * is NOT wired yet — that arrives in Phase 6.
+ * Renders the widget only when Turnstile is enabled in Settings and
+ * required for the given form (register|login|forgot|contact|checkout|
+ * admin_login). Server-side verification happens in the controllers via
+ * the VerifiesTurnstile concern (fail-closed).
  */
 class Turnstile extends Component
 {
+    public function __construct(public string $form = 'register')
+    {
+    }
+
     public function render(): View|string
     {
-        if (empty(config('services.turnstile.site_key'))) {
-            return '<!-- turnstile disabled: no site key configured -->';
+        $turnstile = app(TurnstileService::class);
+
+        if (! $turnstile->requiredFor($this->form)) {
+            return '';
         }
 
-        return view('components.turnstile');
+        return view('components.turnstile', [
+            'form' => $this->form,
+            'siteKey' => $turnstile->siteKey(),
+        ]);
     }
 }

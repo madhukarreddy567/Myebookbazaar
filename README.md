@@ -47,3 +47,27 @@ The seeder inserts ~249 countries and creates the first admin from
 - Cloudflare Turnstile keys exist in `.env` but server-side verification is **not**
   wired yet (Phase 6). The `<x-turnstile>` component renders nothing without keys.
 - Books, cart, payments, coupons and the updater arrive in later phases.
+
+## Running the test suite
+
+Tests run on MySQL using a **separate test database** (`myebookbazaar_test`) —
+they never touch the real `myebookbazaar` database. The connection is
+configured in `phpunit.xml` (`DB_DATABASE=myebookbazaar_test`); `DB_PASSWORD`
+is read from your `.env` so no secret is committed.
+
+One-time setup:
+
+```bash
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS myebookbazaar_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON myebookbazaar_test.* TO 'meb'@'127.0.0.1'; GRANT ALL PRIVILEGES ON myebookbazaar_test.* TO 'meb'@'localhost'; FLUSH PRIVILEGES;"
+DB_DATABASE=myebookbazaar_test php artisan migrate --force
+DB_DATABASE=myebookbazaar_test php artisan db:seed --force
+```
+
+Run the full suite:
+
+```bash
+php artisan test
+```
+
+If you add new migrations later, re-run the migrate command above against
+`myebookbazaar_test` before running the suite.

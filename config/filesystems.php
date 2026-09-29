@@ -33,7 +33,9 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // NEVER serve the private disk over HTTP: ebook PDFs are only
+            // delivered through signed, expiring download links (Phase 3).
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],

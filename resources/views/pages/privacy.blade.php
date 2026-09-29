@@ -1,13 +1,39 @@
 @extends('layouts.app')
 
 @section('title', 'Privacy Policy — MyEbookBazaar')
+@section('meta_description', 'Privacy policy of MyEbookBazaar: what data we collect and how we use it.')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 py-12">
-    <div class="bg-white rounded-2xl shadow p-8 border border-gray-100">
-        <h1 class="font-heading font-bold text-3xl text-brand-teal">Privacy Policy</h1>
-        <p class="text-gray-600 mt-4">We collect only what we need to run your account and deliver your ebooks: your name, email and country. We never sell your data.</p>
-        <p class="text-gray-600 mt-3">Full policy coming soon.</p>
+<div class="max-w-container mx-auto px-4 py-10">
+    <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'Privacy policy']]" />
+
+    <div class="grid md:grid-cols-[220px_1fr] gap-8 mt-6">
+        <aside class="hidden md:block">
+            <nav class="sticky top-24 card p-5" aria-label="On this page">
+                <p class="font-bold text-sm mb-3">On this page</p>
+                <ul class="space-y-2 text-sm">
+                    <li><a href="#collect" class="text-teal-700 hover:underline underline-offset-4">What we collect</a></li>
+                    <li><a href="#use" class="text-teal-700 hover:underline underline-offset-4">How we use it</a></li>
+                    <li><a href="#share" class="text-teal-700 hover:underline underline-offset-4">What we never do</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <x-ui.card class="p-6 md:p-10 prose-page">
+            <h1 class="font-extrabold text-4xl md:text-5xl">Privacy policy</h1>
+            <div class="stripe-divider mt-4 mb-6" aria-hidden="true"></div>
+
+            <h2 id="collect">What we collect</h2>
+            <p>We collect only what we need to run your account and deliver your ebooks: your name, email and country.</p>
+
+            <h2 id="use">How we use it</h2>
+            <p>Your details are used to create your account, process your orders, deliver downloads and send important emails like order receipts and password resets.</p>
+
+            <h2 id="share">What we never do</h2>
+            <p>We never sell your data. Payment details are handled securely by Razorpay and never touch our servers.</p>
+
+            <p class="text-mutedtext text-sm mt-8">Full policy coming soon.</p>
+        </x-ui.card>
     </div>
 </div>
 @endsection

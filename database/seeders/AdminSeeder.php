@@ -17,17 +17,21 @@ class AdminSeeder extends Seeder
             return;
         }
 
-        if (Admin::where('email', $email)->exists()) {
-            $this->command->info("Admin {$email} already exists — skipping.");
-            return;
-        }
+        // Upsert: create the Super Admin, or refresh the password hash if it exists.
+        // The 'hashed' cast on the model hashes the plain password automatically.
+        $admin = Admin::updateOrCreate(
+            ['email' => $email],
+            [
+                'name' => 'Super Admin',
+                'password' => $password,
+                'role' => 'super_admin',
+            ]
+        );
 
-        Admin::create([
-            'name' => 'Administrator',
-            'email' => $email,
-            'password' => $password, // hashed via model cast
-        ]);
+        // Remove any older default admin accounts.
+        $removed = Admin::where('id', '!=', $admin->id)->delete();
 
-        $this->command->info("Admin {$email} created. IMPORTANT: change this password after first login (Reddy > Change Password).");
+        $this->command->info("Super Admin {$email} ready. Older accounts removed: {$removed}.");
+        $this->command->warn('IMPORTANT: change this password after first login (Reddy > Change Password) and enable 2FA when available.');
     }
 }

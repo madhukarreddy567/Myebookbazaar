@@ -19,6 +19,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'country_name',
         'pricing_region',
         'is_blocked',
+        'google_id',
+        'email_verified_at',
     ];
 
     protected $hidden = [
@@ -41,5 +43,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isFromIndia(): bool
     {
         return $this->country_code === 'IN';
+    }
+
+    public function orders(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\Order::class);
     }
 }

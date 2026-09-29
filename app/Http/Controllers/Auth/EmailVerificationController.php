@@ -12,11 +12,11 @@ class EmailVerificationController extends Controller
 {
     /**
      * Show the "verify your email" notice. Disabled entirely when the
-     * EMAIL_VERIFICATION_ENABLED switch is off.
+     * Settings Center 'Email verification required' switch (falls back to EMAIL_VERIFICATION_ENABLED) is off.
      */
     public function notice(Request $request): View|RedirectResponse
     {
-        if (! config('app.email_verification_enabled')) {
+        if (! settings_bool('features.email_verification', true)) {
             return redirect()->route('home');
         }
 
@@ -29,7 +29,7 @@ class EmailVerificationController extends Controller
 
     public function verify(EmailVerificationRequest $request): RedirectResponse
     {
-        if (! config('app.email_verification_enabled')) {
+        if (! settings_bool('features.email_verification', true)) {
             return redirect()->route('home');
         }
 
@@ -46,7 +46,7 @@ class EmailVerificationController extends Controller
 
     public function resend(Request $request): RedirectResponse
     {
-        if (! config('app.email_verification_enabled')) {
+        if (! settings_bool('features.email_verification', true)) {
             return redirect()->route('home');
         }
 

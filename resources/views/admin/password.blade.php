@@ -1,38 +1,50 @@
 @extends('layouts.admin')
 
-@section('title', 'Change Password')
-@section('page_title', 'Change Password')
+@section('title', 'Change password')
+@section('page_title', 'Change password')
+@section('breadcrumb', 'Account / Change password')
 
 @section('content')
-<div class="max-w-lg bg-white rounded-2xl shadow p-8 border border-gray-100">
-    <form method="POST" action="{{ route('reddy.password.update') }}" class="space-y-4">
+<x-admin.page-header title="Change password" subtitle="Use a strong password you do not use anywhere else." />
+
+<div class="surface section-card max-w-xl">
+    <form method="POST" action="{{ route('reddy.password.update') }}" class="space-y-5">
         @csrf
         @method('PUT')
 
         <div>
-            <label for="current_password" class="block text-sm font-medium text-gray-700">Current password</label>
+            <label for="current_password" class="field-label">Current password</label>
             <input id="current_password" name="current_password" type="password" required autocomplete="current-password"
-                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700 @error('current_password') border-red-500 @enderror">
-            @error('current_password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                   class="input @error('current_password') input-error @enderror" aria-describedby="current_password_error">
+            @error('current_password')
+                <p id="current_password_error" class="field-error">
+                    <x-admin.icon name="alert" class="w-4 h-4 shrink-0" />{{ $message }}
+                </p>
+            @enderror
         </div>
 
         <div>
-            <label for="password" class="block text-sm font-medium text-gray-700">New password</label>
+            <label for="password" class="field-label">New password</label>
             <input id="password" name="password" type="password" required autocomplete="new-password"
-                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700 @error('password') border-red-500 @enderror">
-            <p class="text-xs text-gray-500 mt-1">Min 8 characters, with upper + lower case and a number.</p>
-            @error('password') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
+                   class="input @error('password') input-error @enderror" aria-describedby="password_help password_error">
+            <p id="password_help" class="field-help">Minimum 8 characters, with upper and lower case letters and a number.</p>
+            @error('password')
+                <p id="password_error" class="field-error">
+                    <x-admin.icon name="alert" class="w-4 h-4 shrink-0" />{{ $message }}
+                </p>
+            @enderror
         </div>
 
         <div>
-            <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirm new password</label>
+            <label for="password_confirmation" class="field-label">Confirm new password</label>
             <input id="password_confirmation" name="password_confirmation" type="password" required
-                   class="mt-1 w-full rounded-xl border-gray-300 shadow-sm focus:border-brand-teal-700 focus:ring-brand-teal-700">
+                   autocomplete="new-password" class="input">
         </div>
 
-        <button type="submit" class="bg-brand-teal hover:bg-brand-teal-darker text-white font-semibold px-6 py-2.5 rounded-full transition">
-            Update Password
-        </button>
+        <div class="flex justify-end gap-3 border-t border-[var(--color-border)] pt-5">
+            <a href="{{ route('reddy.dashboard') }}" class="btn btn-ghost">Cancel</a>
+            <button type="submit" class="btn btn-primary">Update password</button>
+        </div>
     </form>
 </div>
 @endsection

@@ -1,0 +1,134 @@
+/*
+ * MyEbookBazaar design tokens (shared by customer UI (D1) and admin (D2)).
+ * Single source of truth for colors, type, spacing, radius, shadows.
+ * Light theme is default; dark theme via [data-theme="dark"] on <html>.
+ * NO image assets — everything is CSS.
+ */
+
+:root {
+    /* Brand */
+    --color-teal-900: #0B3D4A;
+    --color-teal-950: #062A33; /* darker teal — keeps 4.5:1 contrast on saffron-600 */    --color-teal-700: #0F5566;
+    --color-teal-100: #DDEDEF;
+    --color-saffron-500: #F28C0F;
+    --color-saffron-600: #D97706;
+    --color-saffron-700: #B45309; /* darker saffron — 5:1 on white for small text */    --color-saffron-100: #FFF0D6;
+
+    /* Surfaces */
+    --color-bg: #F5F8F8;
+    --color-surface: #FFFFFF;
+    --color-border: #D5E1E3;
+
+    /* Text */
+    --color-text: #10262C;
+    --color-muted: #4E6870;
+
+    /* Status */
+    --color-success: #1E8E5A;
+    --color-warning: #B7791F;
+    --color-danger: #C93C3C;
+    --color-info: #0F5566;
+
+    /* Sidebar */
+    --color-sidebar-bg: #0B3D4A;
+    --color-sidebar-text: #DDEDEF;
+    --color-sidebar-muted: #9DB6BC;
+    --color-sidebar-active-bg: #0F5566;
+
+    /* Type */
+    --font-display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+    --font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    /* Shape */
+    --radius-input: 10px;
+    --radius-card: 16px;
+    --radius-modal: 20px;
+    --radius-badge: 999px;
+
+    /* Depth (teal-tinted, low opacity) */
+    --shadow-rest: 0 1px 2px rgb(11 61 74 / 0.06), 0 2px 8px rgb(11 61 74 / 0.06);
+    --shadow-raised: 0 4px 12px rgb(11 61 74 / 0.10), 0 12px 32px rgb(11 61 74 / 0.12);
+
+    /* Focus */
+    --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-saffron-500);
+}
+
+[data-theme="dark"] {
+    --color-bg: #071F26;
+    --color-surface: #0D2F38;
+    --color-border: #1F4650;
+    --color-text: #E8F1F2;
+    --color-muted: #9DB6BC;
+
+    --color-teal-700: #6FB9C9;
+    --color-teal-100: #134652;
+
+    --color-sidebar-bg: #05161B;
+    --color-sidebar-active-bg: #0F5566;
+
+    --shadow-rest: 0 1px 2px rgb(0 0 0 / 0.30), 0 2px 8px rgb(0 0 0 / 0.30);
+    --shadow-raised: 0 4px 12px rgb(0 0 0 / 0.40), 0 12px 32px rgb(0 0 0 / 0.45);
+
+    --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-saffron-500);
+}
+
+/* Diagonal saffron stripe motif (CSS only). */
+.stripes {
+    background-image: repeating-linear-gradient(
+        -55deg,
+        var(--color-saffron-500) 0px,
+        var(--color-saffron-500) 14px,
+        transparent 14px,
+        transparent 34px
+    );
+}
+
+/* Respect reduced motion everywhere. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.001s !important;
+        transition-duration: 0.001s !important;
+    }
+}
+
+/* ---- D1 additions: spacing, type scale, motion, aliases (additive) ---- */
+:root {
+    /* 8px spacing grid */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+    --space-16: 64px;
+    --space-24: 96px;
+
+    /* Type scale */
+    --text-12: 0.75rem;
+    --text-14: 0.875rem;
+    --text-16: 1rem;
+    --text-18: 1.125rem;
+    --text-22: 1.375rem;
+    --text-28: 1.75rem;
+    --text-36: 2.25rem;
+    --text-48: 3rem;
+    --text-64: 4rem;
+
+    /* Radius + shadow aliases used by the customer UI kit */
+    --radius-btn: 10px;
+    --shadow-resting: var(--shadow-rest);
+
+    /* Motion */
+    --motion-fast: 150ms;
+    --motion-base: 250ms;
+    --motion-ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+
+    /* Stripe motif */
+    --stripe-angle: -55deg;
+    --stripe-width: 14px;
+    --stripe-gap: 20px;
+
+    /* Layout */
+    --container-max: 1200px;
+}

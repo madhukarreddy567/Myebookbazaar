@@ -16,7 +16,10 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
+            // not_regex: defense-in-depth against the CRLF email-rule
+            // class (GHSA-5vg9-5847-vvmq) — the address is used in
+            // outgoing mail headers.
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email', 'not_regex:/[\r\n]/'],
             'password' => [
                 'required',
                 'string',

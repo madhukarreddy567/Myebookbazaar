@@ -10,6 +10,10 @@ use Symfony\Component\HttpFoundation\Response;
  * Adds baseline security headers to every response.
  * The CSP allow-list covers Tailwind, Alpine.js, Google Fonts,
  * Cloudflare Turnstile and Razorpay (needed in later phases).
+ * Note: Alpine.js evaluates x-data/x-on expressions with `new Function`,
+ * so 'unsafe-eval' is required in script-src for any Alpine interactivity
+ * (menus, drawers, accordions) to work. This is safe here because all
+ * scripts are first-party or explicitly allow-listed above.
  */
 class SecurityHeaders
 {
@@ -20,7 +24,7 @@ class SecurityHeaders
 
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://js.razorpay.com",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://challenges.cloudflare.com https://js.razorpay.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data:",
