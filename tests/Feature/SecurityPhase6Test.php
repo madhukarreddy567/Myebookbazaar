@@ -12,6 +12,7 @@ use Database\Seeders\SettingsSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
 /**
@@ -70,8 +71,8 @@ class SecurityPhase6Test extends TestCase
         return array_merge([
             'name' => 'Reg User',
             'email' => 'reg-'.uniqid().'@example.com',
-            'password' => 'Password123',
-            'password_confirmation' => 'Password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'country_code' => 'IN',
             // Honeypot fields as a real browser would render them.
             'website_url' => '',
@@ -607,5 +608,200 @@ class SecurityPhase6Test extends TestCase
         $this->post('/webhooks/razorpay', [], ['HTTP_X-Razorpay-Signature' => 'bogus'])
             ->assertStatus(400);
         $this->assertDatabaseHas('security_logs', ['event' => 'webhook.bad_signature']);
+    }
+
+    // ------------------------------------------------------------------
+    // Integrations verification: maintenance toggle, Turnstile on every
+    // form, and route rate limits
+    // ------------------------------------------------------------------
+
+    public function test_admin_settings_toggle_flips_maintenance_mode(): void
+    {
+        $admin = $this->makeAdmin('super_admin');
+        $this->actingAs($admin, 'admin');
+
+        // Toggle ON through the same form the Settings Center renders.
+        $this->put('/reddy/settings', [
+            'tab' => 'security',
+            's' => ['security' => ['maintenance_enabled' => '1']],
+        ])->assertRedirect();
+        $this->assertTrue(settings_bool('security.maintenance_enabled'));
+
+        $this->get('/')->assertStatus(503)->assertViewIs('errors.503');
+
+        // Log the admin back out so /reddy/login is hit as a guest —
+        // it must stay reachable (200), never a 503.
+        $this->post(route('reddy.logout'));
+        $this->get('/reddy/login')->assertOk();
+
+        // An unchecked checkbox is absent from the request => OFF.
+        $this->actingAs($admin, 'admin');
+        $this->put('/reddy/settings', ['tab' => 'security'])->assertRedirect();
+        $this->assertFalse(settings_bool('security.maintenance_enabled'));
+
+        $this->post(route('reddy.logout'));
+        $this->get('/')->assertOk();
+    }
+
+    public function test_maintenance_page_is_branded_503_view_with_custom_message(): void
+    {
+        $this->set('security.maintenance_enabled', '1');
+        $this->set('security.maintenance_message', 'Back in 10 minutes!');
+
+        $response = $this->get('/');
+        $response->assertStatus(503);
+        $response->assertViewIs('errors.503');
+        $response->assertSee('Back in 10 minutes!');
+        $response->assertSee('We are doing quick maintenance');
+    }
+
+    public function test_turnstile_widget_hidden_when_keys_missing_but_enabled(): void
+    {
+        // Master switch ON but no keys saved => widget must not render.
+        $this->set('security.turnstile_enabled', '1');
+        $this->set('security.turnstile_site_key', null);
+        $this->set('security.turnstile_secret_key', null);
+        $this->set('security.turnstile_register', '1');
+        $this->set('security.turnstile_login', '1');
+
+        $this->get('/register')->assertOk()->assertDontSee('cf-turnstile', false);
+        $this->get('/login')->assertOk()->assertDontSee('cf-turnstile', false);
+    }
+
+    public function test_turnstile_rejects_login_without_valid_token(): void
+    {
+        $this->enableTurnstile(['login'], false);
+        $user = $this->makeUser();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'Password123',
+        ]);
+
+        $response->assertSessionHasErrors('cf-turnstile-response');
+        $this->assertGuest();
+    }
+
+    public function test_turnstile_accepts_login_with_valid_token(): void
+    {
+        $this->enableTurnstile(['login'], true);
+        $user = $this->makeUser();
+
+        $response = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'Password123',
+            'cf-turnstile-response' => 'valid-token',
+        ]);
+
+        // Email verification is on by default, so the login lands on the
+        // verification notice — proving the Turnstile check passed.
+        $response->assertRedirect('/verify-email');
+        $this->assertAuthenticated();
+    }
+
+    public function test_turnstile_disabled_login_works_without_token(): void
+    {
+        // Keys not configured => verification is skipped, form still works.
+        $user = $this->makeUser();
+
+        $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'Password123',
+        ])->assertRedirect('/verify-email');
+        $this->assertAuthenticated();
+    }
+
+    public function test_turnstile_rejects_contact_without_valid_token(): void
+    {
+        Mail::fake();
+        $this->enableTurnstile(['contact'], false);
+
+        $response = $this->post('/contact', [
+            'name' => 'A Reader',
+            'email' => 'reader@example.com',
+            'subject' => 'A question',
+            'message' => 'Hello, I have a question about the book.',
+        ]);
+
+        $response->assertSessionHasErrors('cf-turnstile-response');
+        Mail::assertNothingSent();
+    }
+
+    public function test_turnstile_accepts_contact_with_valid_token(): void
+    {
+        Mail::fake();
+        $this->enableTurnstile(['contact'], true);
+
+        $response = $this->post('/contact', [
+            'name' => 'A Reader',
+            'email' => 'reader@example.com',
+            'subject' => 'A question',
+            'message' => 'Hello, I have a question about the book.',
+            'cf-turnstile-response' => 'valid-token',
+        ]);
+
+        $response->assertRedirect()->assertSessionHas('status');
+        Mail::assertSent(\App\Mail\ContactMessageMail::class);
+    }
+
+    public function test_turnstile_rejects_checkout_without_valid_token(): void
+    {
+        $this->enableTurnstile(['checkout'], false);
+        $user = $this->makeUser();
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        $response = $this->actingAs($user)->postJson('/checkout', [
+            'no_refund_accepted' => 'yes',
+            'cf_turnstile_response' => 'bogus-token',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('cf-turnstile-response');
+    }
+
+    public function test_turnstile_passes_checkout_with_valid_token(): void
+    {
+        $this->enableTurnstile(['checkout'], true);
+        $user = $this->makeUser();
+        $user->forceFill(['email_verified_at' => now()])->save();
+
+        // Empty cart: Turnstile passes, then the controller reports the
+        // empty cart — proving verification did not block the request.
+        $response = $this->actingAs($user)->postJson('/checkout', [
+            'no_refund_accepted' => 'yes',
+            'cf_turnstile_response' => 'valid-token',
+        ]);
+
+        $response->assertStatus(422);
+        $response->assertJsonFragment(['message' => 'Your cart is empty.']);
+    }
+
+    public function test_login_throttle_returns_429_after_five_attempts(): void
+    {
+        $user = $this->makeUser();
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => $user->email, 'password' => 'WrongPass123']);
+        }
+
+        // The 6th attempt inside the minute window is refused by the
+        // throttle:5,1 middleware before the controller runs.
+        $this->post('/login', ['email' => $user->email, 'password' => 'WrongPass123'])
+            ->assertStatus(429);
+    }
+
+    public function test_register_throttle_returns_429_after_five_attempts(): void
+    {
+        // Successful registrations log the user in, so log back out
+        // between attempts — every POST must reach the throttle:5,1
+        // route middleware as a guest.
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/register', $this->registerPayload())->assertRedirect('/verify-email');
+            $this->post('/logout')->assertRedirect();
+        }
+
+        // The 6th attempt inside the minute window is refused with 429.
+        $this->post('/register', $this->registerPayload())
+            ->assertStatus(429);
     }
 }
