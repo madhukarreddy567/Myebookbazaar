@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Book extends Model
@@ -109,8 +110,10 @@ class Book extends Model
 
     /**
      * Public cover URL (covers are the allowed public images).
-     * Returns null when the book has no uploaded cover — views then show
-     * the CSS placeholder.
+     * Returns null when the book has no uploaded cover OR when the
+     * file is missing from disk (e.g. wiped by a redeploy without a
+     * persistent volume) — views then show the CSS placeholder or the
+     * displayCoverUrl() fallback instead of a broken <img>.
      */
     public function coverUrl(): ?string
     {
@@ -118,7 +121,22 @@ class Book extends Model
             return null;
         }
 
+        if (! Storage::disk('public')->exists($this->cover_image)) {
+            return null;
+        }
+
         return asset('storage/'.$this->cover_image);
+    }
+
+    /**
+     * Cover URL for customer-facing views: the uploaded cover wins;
+     * the Fit at Home book falls back to the Stitch 3D mockup so the
+     * page never shows a broken image or an empty placeholder.
+     */
+    public function displayCoverUrl(): ?string
+    {
+        return $this->coverUrl()
+            ?: (str_contains($this->slug ?? '', 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null);
     }
 
     /**
