@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreStaffRequest extends FormRequest
 {
@@ -16,7 +17,7 @@ class StoreStaffRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email', 'max:255', 'unique:admins,email'],
-            'password' => ['required', 'string', 'min:12', 'max:100'],
+            'password' => ['required', 'string', 'max:100', Password::min(12)->symbols()],
         ];
     }
 
@@ -24,6 +25,7 @@ class StoreStaffRequest extends FormRequest
     {
         return [
             'password.min' => 'Staff passwords must be at least 12 characters.',
+            'password.symbols' => 'Staff passwords must include at least one symbol (for example !, @ or #).',
         ];
     }
 }

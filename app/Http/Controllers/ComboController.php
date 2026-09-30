@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Combo;
 use App\Services\PriceService;
+use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
@@ -48,7 +49,8 @@ class ComboController extends Controller
         $ownedBooks = $user ? $combo->booksOwnedBy($user) : collect();
         $ownsAll = $user ? $combo->userOwnsAllBooks($user) : false;
 
-        return view('combos.show', compact('combo', 'ownedBooks', 'ownsAll'));
+        return view('combos.show', compact('combo', 'ownedBooks', 'ownsAll'))
+            ->with('seo', app(SeoService::class));
     }
 
     /**

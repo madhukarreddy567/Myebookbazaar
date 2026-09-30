@@ -36,6 +36,7 @@ class PrivacyController extends Controller
 
         $downloads = DownloadLog::with('book:id,title')
             ->where('user_id', $user->id)
+            ->whereNotNull('downloaded_at')
             ->orderByDesc('downloaded_at')
             ->get();
 
@@ -119,6 +120,10 @@ class PrivacyController extends Controller
                 'remember_token' => null,
                 'email_verified_at' => null,
                 'is_blocked' => true,
+                // The Google OAuth subject identifier is personal data:
+                // drop the link so the anonymized row cannot be joined
+                // back to the person's Google account.
+                'google_id' => null,
             ])->save();
 
             // The cart belongs to the person, not the records: clear it.

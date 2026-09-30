@@ -41,7 +41,18 @@ class CouponRequest extends FormRequest
                     }
                 },
             ],
-            'currency' => ['required', 'in:INR,USD,BOTH'],
+            'currency' => [
+                'required',
+                'in:INR,USD,BOTH',
+                function ($attribute, $value, $fail) {
+                    // A flat amount is denominated in a currency — with
+                    // BOTH it is ambiguous (₹100 off a $4.99 order would
+                    // make it free), so flat coupons must pick INR or USD.
+                    if ($this->input('type') === 'flat' && $value === 'BOTH') {
+                        $fail('A flat-amount coupon must be in INR or USD, not both.');
+                    }
+                },
+            ],
             'min_order_amount' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
             'max_uses' => ['nullable', 'integer', 'min:1', 'max:1000000000'],
             'max_uses_per_user' => ['required', 'integer', 'min:1', 'max:1000000'],

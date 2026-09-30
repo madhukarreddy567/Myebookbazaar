@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\Category;
 use App\Models\Combo;
 use Illuminate\Support\Facades\Cache;
 
@@ -50,6 +51,19 @@ class SitemapController extends Controller
                         'loc' => route('books.show', $book->slug),
                         'lastmod' => $book->updated_at?->toDateString(),
                         'priority' => '0.9',
+                        'changefreq' => 'weekly',
+                    ];
+                });
+
+            // Category pages are filtered catalogue URLs (only active books
+            // are listed there, so they are always indexable).
+            Category::where('is_active', true)->orderBy('updated_at', 'desc')
+                ->get(['slug', 'updated_at'])
+                ->each(function ($category) use (&$urls) {
+                    $urls[] = [
+                        'loc' => route('books', ['category' => $category->slug]),
+                        'lastmod' => $category->updated_at?->toDateString(),
+                        'priority' => '0.7',
                         'changefreq' => 'weekly',
                     ];
                 });

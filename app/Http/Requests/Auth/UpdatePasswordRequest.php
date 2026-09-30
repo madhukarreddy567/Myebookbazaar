@@ -20,8 +20,15 @@ class UpdatePasswordRequest extends FormRequest
                 'required',
                 'string',
                 'confirmed',
-                Password::min(8)->mixedCase()->numbers(),
+                Password::min(8)->mixedCase()->numbers()->symbols(),
             ],
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'password.symbols' => 'The password must include at least one symbol (for example !, @ or #).',
         ];
     }
 }

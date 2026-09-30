@@ -41,7 +41,10 @@ class BookRequest extends FormRequest
             'is_featured' => ['nullable', 'boolean'],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_cover' => ['nullable', 'boolean'],
-            'pdf' => ['nullable', 'file', 'mimes:pdf', 'max:51200'],
+            // Ebook PDFs up to 200 MB. The Docker image must allow this too
+            // (Dockerfile sets upload_max_filesize=200M / post_max_size=210M);
+            // otherwise PHP rejects the upload before Laravel ever sees it.
+            'pdf' => ['nullable', 'file', 'mimes:pdf', 'max:204800'],
             'remove_pdf' => ['nullable', 'boolean'],
         ];
     }
@@ -51,7 +54,7 @@ class BookRequest extends FormRequest
         return [
             'sale_price_inr.lt' => 'The INR sale price must be lower than the regular INR price.',
             'sale_price_usd.lt' => 'The USD sale price must be lower than the regular USD price.',
-            'pdf.max' => 'The PDF must not be larger than 50 MB.',
+            'pdf.max' => 'The PDF must not be larger than 200 MB.',
         ];
     }
 }

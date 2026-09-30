@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Models\Category;
 use App\Models\Combo;
 use App\Services\PriceService;
+use App\Services\SeoService;
 use Illuminate\View\View;
 
 class StoreController extends Controller
@@ -26,6 +27,7 @@ class StoreController extends Controller
             ->orderBy('sort_order')
             ->orderByDesc('id')
             ->limit(6)
+            ->withRatingSummary()
             ->get()
             ->map(fn (Book $book) => $this->withPrice($book, $user));
 
@@ -73,6 +75,7 @@ class StoreController extends Controller
                 ->orderBy('sort_order')
                 ->orderByDesc('id')
                 ->limit(6)
+                ->withRatingSummary()
                 ->get()
                 ->filter(fn (Book $book) => $this->prices->saleIsActive($book)
                     && $this->prices->getPrice($book, $user)['on_sale'])
@@ -80,7 +83,19 @@ class StoreController extends Controller
                 ->values();
         }
 
-        return view('home', compact('featured', 'categories', 'banners', 'combos', 'offers'));
+        // "Explore by Discipline" grid — all active books (real data only),
+        // priced for the visitor.
+        $books = Book::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->limit(12)
+            ->withRatingSummary()
+            ->get()
+            ->map(fn (Book $book) => $this->withPrice($book, $user));
+
+        return view('home', compact('featured', 'categories', 'banners', 'combos', 'offers', 'books'))
+            ->with('seo', app(SeoService::class));
     }
 
     /**

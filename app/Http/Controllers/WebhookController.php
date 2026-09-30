@@ -67,8 +67,15 @@ class WebhookController extends Controller
 
     protected function handleCaptured(array $entity, array $event): void
     {
-        $razorpayOrderId = $entity['order_id'] ?? null;
-        $razorpayPaymentId = $entity['id'] ?? null;
+        $isOrderEvent = ($event['event'] ?? null) === 'order.paid';
+
+        // payment.captured carries the PAYMENT entity (id = pay_xxx,
+        // order_id = order_xxx). order.paid carries the ORDER entity
+        // instead (id = order_xxx, no order_id key, no payment id) —
+        // treating its id as a payment id would store garbage in
+        // razorpay_payment_id.
+        $razorpayOrderId = $isOrderEvent ? ($entity['id'] ?? null) : ($entity['order_id'] ?? null);
+        $razorpayPaymentId = $isOrderEvent ? null : ($entity['id'] ?? null);
 
         if (! $razorpayOrderId) {
             Log::warning('Phase 3: captured webhook without order_id.');
@@ -108,10 +115,13 @@ class WebhookController extends Controller
                 return;
             }
 
-            $payment->update([
-                'razorpay_payment_id' => $razorpayPaymentId,
-                'raw_webhook' => $event,
-            ]);
+            $updates = ['raw_webhook' => $event];
+
+            if ($razorpayPaymentId) {
+                $updates['razorpay_payment_id'] = $razorpayPaymentId;
+            }
+
+            $payment->update($updates);
 
             // markPaid is itself idempotent (order lock + status check).
             $this->orders->markPaid($order, $payment->fresh(), 'webhook');

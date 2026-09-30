@@ -2,11 +2,46 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class Book extends Model
 {
+    /**
+     * Model-level safety net: a slug is always generated from the title
+     * when none is supplied (unique). The admin panel generates slugs
+     * itself; this covers any other creation path (seeders, API).
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Book $book) {
+            if (trim((string) $book->slug) === '') {
+                $book->slug = static::generateUniqueSlug((string) $book->title, $book->id);
+            }
+        });
+    }
+
+    /**
+     * Unique slug from a title, appending -2, -3, … on collision.
+     * $ignoreId skips the record itself when regenerating on update.
+     */
+    public static function generateUniqueSlug(string $title, $ignoreId = null): string
+    {
+        $base = Str::slug($title) ?: 'book';
+        $slug = $base;
+        $i = 2;
+
+        while (static::query()->where('slug', $slug)
+            ->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))
+            ->exists()) {
+            $slug = $base.'-'.$i++;
+        }
+
+        return $slug;
+    }
     protected $fillable = [
         'category_id',
         'title',
@@ -27,6 +62,7 @@ class Book extends Model
         'sale_ends_at',
         'file_path',
         'file_size',
+        'original_filename',
         'isbn',
         'published_at',
         'is_active',
@@ -54,6 +90,23 @@ class Book extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function ratings(): HasMany
+    {
+        return $this->hasMany(Rating::class);
+    }
+
+    /**
+     * Attach the public rating summary (visible reviews only) as
+     * `rating_average` (float|null) and `ratings_count` (int) attributes,
+     * in a single query — no N+1 on book lists.
+     */
+    public function scopeWithRatingSummary(Builder $query): Builder
+    {
+        return $query
+            ->withAvg(['ratings as rating_average' => fn (Builder $r) => $r->visible()], 'stars')
+            ->withCount(['ratings as ratings_count' => fn (Builder $r) => $r->visible()]);
+    }
+
     /**
      * Public cover URL (covers are the allowed public images).
      * Returns null when the book has no uploaded cover — views then show
@@ -76,5 +129,18 @@ class Book extends Model
     public function hasFile(): bool
     {
         return $this->file_path !== null && $this->file_path !== '';
+    }
+
+    /**
+     * Filename served to the customer: the original upload name when known,
+     * otherwise a slug of the title. Sanitized for Content-Disposition
+     * (basename + no control characters).
+     */
+    public function downloadFilename(): string
+    {
+        $original = $this->original_filename ? basename((string) $this->original_filename) : '';
+        $original = trim((string) preg_replace('/[\x00-\x1F\x7F]/', '', $original));
+
+        return $original !== '' ? $original : str($this->title)->slug().'.pdf';
     }
 }

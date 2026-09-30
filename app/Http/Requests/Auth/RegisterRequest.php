@@ -24,7 +24,7 @@ class RegisterRequest extends FormRequest
                 'required',
                 'string',
                 'confirmed',
-                Password::min(8)->mixedCase()->numbers(),
+                Password::min(8)->mixedCase()->numbers()->symbols(),
             ],
             'country_code' => ['required', 'string', 'size:2', 'exists:countries,iso_code'],
         ];
@@ -34,6 +34,7 @@ class RegisterRequest extends FormRequest
     {
         return [
             'password.mixed' => 'The password must contain both upper and lower case letters.',
+            'password.symbols' => 'The password must include at least one symbol (for example !, @ or #).',
         ];
     }
 }

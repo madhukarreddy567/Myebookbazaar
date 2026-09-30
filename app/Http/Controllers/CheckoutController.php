@@ -12,9 +12,13 @@ use App\Services\CouponService;
 use App\Services\OrderService;
 use App\Services\PriceService;
 use App\Services\RazorpayService;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\View\View;
 
@@ -73,6 +77,14 @@ class CheckoutController extends Controller
             'display_discount' => $this->prices->format($quote['discount'], $base['currency']),
             'display_total' => $this->prices->format($quote['grand_total'], $base['currency']),
         ];
+
+        // GST display (server-computed, never from the browser): the
+        // total is GST-INCLUSIVE, so this is an informational split.
+        $gst = $this->orders->gstBreakdown($quote['grand_total'], $base['currency']);
+        $summary['gst_rate'] = $gst['rate'];
+        $summary['gst_rate_label'] = OrderService::gstRateLabel($gst['rate']);
+        $summary['display_gst'] = $this->prices->format($gst['gst'], $base['currency']);
+        $summary['display_taxable'] = $this->prices->format($gst['taxable'], $base['currency']);
 
         $gatewayError = $quote['free'] ? null : $this->gatewayError($base['currency']);
 
@@ -161,34 +173,93 @@ class CheckoutController extends Controller
 
         [$books, $base, $combo] = $purchase;
 
-        $quote = $this->coupons->quote($user, $books, $base['subtotal'], $base['currency'], session('coupon_code'), $combo);
+        // One checkout at a time per customer — paid AND free orders. The
+        // lock serialises double clicks / double submits; the reuse
+        // check inside turns the second submit into a re-delivery of the
+        // first submit's payment params instead of a second order (and a
+        // second charge). Free (100% coupon) orders used to skip this
+        // lock: a double click could create two paid orders before the
+        // first one's markPaid cleared the cart. The coupon quote is
+        // computed inside the lock so the crash-recovery check below sees
+        // a consistent picture.
+        try {
+            return Cache::lock('checkout-store:'.$user->id, 15)->block(10, function () use ($request, $user, $books, $base, $combo) {
+                $quote = $this->coupons->quote($user, $books, $base['subtotal'], $base['currency'], session('coupon_code'), $combo);
 
-        if (session('coupon_code') && $quote['coupon_error']) {
-            session()->forget('coupon_code');
+                if (session('coupon_code') && $quote['coupon_error']) {
+                    // The coupon may have been consumed by THIS
+                    // customer's own pending order for the exact same
+                    // purchase (crash between order creation and payment
+                    // attach). Resume that order instead of burning the
+                    // coupon and failing the retry.
+                    if ($resumable = $this->findResumableOrder($user, $books, $base, (string) session('coupon_code'))) {
+                        session()->forget(['coupon_code', 'checkout_combo_id']);
 
-            return response()->json(['message' => $quote['coupon_error']], 422);
+                        return $this->resumeOrder($request, $user, $resumable);
+                    }
+
+                    session()->forget('coupon_code');
+
+                    return response()->json(['message' => $quote['coupon_error']], 422);
+                }
+
+                if (! $quote['free'] && ($error = $this->gatewayError($base['currency']))) {
+                    return response()->json(['message' => $error], 422);
+                }
+
+                if (! $quote['free'] && ($reusable = $this->findReusablePendingOrder($user, $books, $base, $quote))) {
+                    session()->forget(['coupon_code', 'checkout_combo_id']);
+
+                    if ($reusable['payment']) {
+                        return response()->json($this->checkoutParams($user, $reusable['order'], $reusable['payment']));
+                    }
+
+                    // Crash-window recovery: the order row (and its
+                    // coupon usage) was committed but the process died
+                    // before the Razorpay order / payment row was
+                    // attached. Attach a fresh Razorpay order to the
+                    // EXISTING order instead of creating a duplicate
+                    // order that would consume the coupon a second time.
+                    return $this->attachRazorpayOrder($request, $user, $reusable['order']);
+                }
+
+                return $quote['free']
+                    ? $this->createFreeOrder($request, $user, $combo, $quote)
+                    : $this->createPaidOrder($request, $user, $combo, $quote);
+            });
+        } catch (LockTimeoutException) {
+            return response()->json([
+                'message' => 'Your checkout is already being processed. Please wait a moment, then check your orders before trying again.',
+            ], 429);
         }
+    }
 
-        if (! $quote['free'] && ($error = $this->gatewayError($base['currency']))) {
-            return response()->json(['message' => $error], 422);
-        }
-
-        $method = $quote['free'] ? 'coupon' : 'razorpay';
-
+    /**
+     * A 100% coupon completes the order with NO Razorpay involvement:
+     * the order is marked paid with payment method "coupon".
+     */
+    protected function createFreeOrder(Request $request, $user, ?Combo $combo, array $quote): JsonResponse
+    {
         try {
             $order = $combo
-                ? $this->orders->createFromCombo($user, $combo, $request->ip(), $request->userAgent(), $quote['coupon'], $method)
-                : $this->orders->createFromCart($user, $request->ip(), $request->userAgent(), $quote['coupon'], $method);
+                ? $this->orders->createFromCombo($user, $combo, $request->ip(), $request->userAgent(), $quote['coupon'], 'coupon')
+                : $this->orders->createFromCart($user, $request->ip(), $request->userAgent(), $quote['coupon'], 'coupon');
         } catch (CouponException $e) {
             session()->forget('coupon_code');
 
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            // Cart emptied (or combo fully owned) between page view and submit.
             return response()->json(['message' => $e->getMessage()], 422);
         }
 
         session()->forget(['coupon_code', 'checkout_combo_id']);
 
-        // 100% coupon: no Razorpay at all — the order is simply paid.
-        if ($quote['free']) {
+        // Payment row + paid transition in one transaction: a crash
+        // between them must never leave a captured payment on a
+        // non-paid order (markPaid's inner transaction nests via a
+        // savepoint).
+        $order = DB::transaction(function () use ($order) {
             $payment = Payment::create([
                 'order_id' => $order->id,
                 'amount' => 0,
@@ -196,11 +267,43 @@ class CheckoutController extends Controller
                 'status' => Payment::STATUS_CAPTURED,
             ]);
 
-            $order = $this->orders->markPaid($order->fresh(), $payment, 'coupon');
+            return $this->orders->markPaid($order->fresh(), $payment, 'coupon');
+        });
 
-            return response()->json(['redirect' => route('checkout.thankyou', $order)]);
+        return response()->json(['redirect' => route('checkout.thankyou', $order)]);
+    }
+
+    /**
+     * Create the order and the Razorpay order. Every amount comes from
+     * the server-side quote — nothing is trusted from the browser.
+     */
+    protected function createPaidOrder(Request $request, $user, ?Combo $combo, array $quote): JsonResponse
+    {
+        try {
+            $order = $combo
+                ? $this->orders->createFromCombo($user, $combo, $request->ip(), $request->userAgent(), $quote['coupon'], 'razorpay')
+                : $this->orders->createFromCart($user, $request->ip(), $request->userAgent(), $quote['coupon'], 'razorpay');
+        } catch (CouponException $e) {
+            session()->forget('coupon_code');
+
+            return response()->json(['message' => $e->getMessage()], 422);
+        } catch (\RuntimeException $e) {
+            // Cart emptied (or combo fully owned) between page view and submit.
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
+        session()->forget(['coupon_code', 'checkout_combo_id']);
+
+        return $this->attachRazorpayOrder($request, $user, $order);
+    }
+
+    /**
+     * Create the Razorpay order for an existing pending order and attach
+     * the payment row. Shared by createPaidOrder() and the crash-window
+     * recovery path in store().
+     */
+    protected function attachRazorpayOrder(Request $request, $user, Order $order): JsonResponse
+    {
         $razorpayOrder = $this->razorpay->createOrder(
             $order->order_number,
             $order->amountInSubunits(),
@@ -208,12 +311,21 @@ class CheckoutController extends Controller
         );
 
         if (! $razorpayOrder) {
+            // The gateway never saw this order: hand the coupon usage
+            // back so the customer is not charged a limited coupon for
+            // a payment that never happened, and fail the order honestly.
+            if ($order->coupon_code) {
+                $this->coupons->release($order);
+            }
+
+            $this->orders->markFailed($order, null, 'The payment gateway was unreachable while creating the payment. No money was taken.');
+
             return response()->json([
                 'message' => 'The payment gateway is temporarily unavailable. Please try again in a few minutes.',
             ], 502);
         }
 
-        Payment::create([
+        $payment = Payment::create([
             'order_id' => $order->id,
             'razorpay_order_id' => $razorpayOrder['id'],
             'amount' => $order->grand_total,
@@ -221,9 +333,124 @@ class CheckoutController extends Controller
             'status' => Payment::STATUS_CREATED,
         ]);
 
-        return response()->json([
+        return response()->json($this->checkoutParams($user, $order, $payment));
+    }
+
+    /**
+     * Find this customer's own pending order for the exact same books
+     * that already consumed the given coupon code. Used when the coupon
+     * quote fails at submit time: the coupon is not "already used" in
+     * the hostile sense — it was consumed by this very purchase when
+     * the process crashed between order creation and payment attach.
+     * Resuming it is the only way the customer is not charged a limited
+     * coupon for a payment that never happened.
+     */
+    protected function findResumableOrder($user, $books, array $base, string $couponCode): ?Order
+    {
+        $bookIds = $books->map(fn ($book) => $book->id)->sort()->values()->all();
+        $code = mb_strtoupper(trim($couponCode));
+
+        if ($code === '') {
+            return null;
+        }
+
+        return Order::query()
+            ->where('user_id', $user->id)
+            ->where('status', Order::STATUS_PENDING)
+            ->where('coupon_code', $code)
+            ->where('currency', $base['currency'])
+            ->where('created_at', '>=', now()->subMinutes(15))
+            ->with('items')
+            ->latest('id')
+            ->get()
+            ->first(fn (Order $order) => $order->items
+                ->map(fn ($item) => $item->book_id)->sort()->values()->all() === $bookIds);
+    }
+
+    /**
+     * Resume a crash-window order: a Razorpay purchase gets a fresh
+     * Razorpay order attached; a free (100% coupon) purchase is
+     * completed synchronously. Either way the already-consumed coupon
+     * is honoured, not burned.
+     */
+    protected function resumeOrder(Request $request, $user, Order $order): JsonResponse
+    {
+        if ($order->payment_method === 'coupon') {
+            $order = DB::transaction(function () use ($order) {
+                $payment = Payment::create([
+                    'order_id' => $order->id,
+                    'amount' => 0,
+                    'currency' => $order->currency,
+                    'status' => Payment::STATUS_CAPTURED,
+                ]);
+
+                return $this->orders->markPaid($order->fresh(), $payment, 'coupon');
+            });
+
+            return response()->json(['redirect' => route('checkout.thankyou', $order)]);
+        }
+
+        return $this->attachRazorpayOrder($request, $user, $order);
+    }
+
+    /**
+     * Find a pending order this customer created moments ago for the
+     * exact same purchase (same books, totals, currency, coupon). A
+     * double submit reuses it instead of creating a second order.
+     *
+     * The payment is null when the order row was committed but the
+     * process died before the Razorpay order / payment row was
+     * attached (crash window) — the caller attaches a fresh Razorpay
+     * order to the existing order instead of duplicating it.
+     *
+     * @return array{order: Order, payment: ?Payment}|null
+     */
+    protected function findReusablePendingOrder($user, $books, array $base, array $quote): ?array
+    {
+        $bookIds = $books->map(fn ($book) => $book->id)->sort()->values()->all();
+
+        $candidates = Order::query()
+            ->where('user_id', $user->id)
+            ->where('status', Order::STATUS_PENDING)
+            ->where('payment_method', 'razorpay')
+            ->where('currency', $base['currency'])
+            ->where('grand_total', $quote['grand_total'])
+            ->where('created_at', '>=', now()->subMinutes(15))
+            ->with('items')
+            ->latest('id')
+            ->get();
+
+        foreach ($candidates as $order) {
+            if (($order->coupon_code ?? null) !== ($quote['coupon']?->code ?? null)) {
+                continue;
+            }
+
+            $orderBookIds = $order->items->map(fn ($item) => $item->book_id)->sort()->values()->all();
+
+            if ($orderBookIds !== $bookIds) {
+                continue;
+            }
+
+            $payment = $order->payments()
+                ->where('status', Payment::STATUS_CREATED)
+                ->whereNotNull('razorpay_order_id')
+                ->latest('id')
+                ->first();
+
+            return ['order' => $order, 'payment' => $payment];
+        }
+
+        return null;
+    }
+
+    /**
+     * The checkout.js parameters for an order + Razorpay payment.
+     */
+    protected function checkoutParams($user, Order $order, Payment $payment): array
+    {
+        return [
             'key' => $this->razorpay->keyId(),
-            'razorpay_order_id' => $razorpayOrder['id'],
+            'razorpay_order_id' => $payment->razorpay_order_id,
             'amount' => $order->amountInSubunits(),
             'currency' => $order->currency,
             'order_number' => $order->order_number,
@@ -231,7 +458,7 @@ class CheckoutController extends Controller
             'prefill' => ['name' => $user->name, 'email' => $user->email],
             'verify_url' => route('checkout.verify'),
             'failure_url' => route('checkout.report-failure'),
-        ]);
+        ];
     }
 
     /**
@@ -277,8 +504,14 @@ class CheckoutController extends Controller
         // Bind the payment id now; the unique constraint makes replays safe.
         try {
             $payment->update(['razorpay_payment_id' => $data['razorpay_payment_id']]);
-        } catch (\Illuminate\Database\QueryException) {
+        } catch (QueryException $e) {
             // Another request already recorded this payment id (replay).
+            // Any other database error is real and must surface, not be
+            // mistaken for a replay.
+            if (! $this->isDuplicateKeyError($e)) {
+                throw $e;
+            }
+
             return response()->json(['redirect' => route('checkout.thankyou', $order->fresh())]);
         }
 
@@ -437,6 +670,9 @@ class CheckoutController extends Controller
         foreach ($items as $row) {
             $quote = $this->prices->getPrice($row->book, $user);
             $row->price_display = $this->prices->format($quote['amount'], $quote['currency']);
+            $row->price_regular_display = $quote['regular_amount'] !== null
+                ? $this->prices->format($quote['regular_amount'], $quote['currency'])
+                : null;
         }
 
         return $items;
@@ -449,9 +685,23 @@ class CheckoutController extends Controller
             $row = new \stdClass();
             $row->book = $book;
             $row->price_display = $this->prices->format($quote['amount'], $quote['currency']);
+            $row->price_regular_display = $quote['regular_amount'] !== null
+                ? $this->prices->format($quote['regular_amount'], $quote['currency'])
+                : null;
 
             return $row;
         });
+    }
+
+    /**
+     * True for MySQL duplicate-key violations (SQLSTATE 23000 / error
+     * 1062): the "this already happened" signal for idempotency.
+     */
+    protected function isDuplicateKeyError(QueryException $e): bool
+    {
+        $info = $e->errorInfo ?? [];
+
+        return ($info[1] ?? null) == 1062 || (string) $e->getCode() === '23000';
     }
 
     /**

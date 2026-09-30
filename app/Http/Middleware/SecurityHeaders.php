@@ -38,6 +38,20 @@ class SecurityHeaders
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Content-Security-Policy', $csp);
+        $response->headers->set(
+            'Permissions-Policy',
+            'camera=(), microphone=(), geolocation=(), payment=(self)'
+        );
+
+        // HSTS only ever goes out over HTTPS — never on plain HTTP.
+        // Behind Railway's proxy this requires TRUSTED_PROXIES=* so
+        // request()->isSecure() sees the real scheme.
+        if ($request->isSecure()) {
+            $response->headers->set(
+                'Strict-Transport-Security',
+                'max-age=31536000; includeSubDomains'
+            );
+        }
 
         // Remove fingerprinting headers where possible.
         $response->headers->remove('X-Powered-By');

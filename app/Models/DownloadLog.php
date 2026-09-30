@@ -15,6 +15,7 @@ class DownloadLog extends Model
         'book_id',
         'order_id',
         'ip_address',
+        'user_agent',
         'downloaded_at',
     ];
 
@@ -41,9 +42,23 @@ class DownloadLog extends Model
     }
 
     /**
-     * Downloads used for one book inside one order.
+     * Successfully SERVED downloads for one book inside one order.
+     * Blocked attempts (over the limit, missing file) are logged with
+     * downloaded_at = NULL and never count against the limit.
      */
     public static function usedCount(int $orderId, int $bookId): int
+    {
+        return self::query()
+            ->where('order_id', $orderId)
+            ->where('book_id', $bookId)
+            ->whereNotNull('downloaded_at')
+            ->count();
+    }
+
+    /**
+     * Every logged attempt for one book inside one order, served or not.
+     */
+    public static function attemptsCount(int $orderId, int $bookId): int
     {
         return self::query()
             ->where('order_id', $orderId)

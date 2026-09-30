@@ -28,6 +28,7 @@ class UpdateSettingsRequest extends FormRequest
                 'email' => [($field['required'] ?? false) ? 'required' : 'nullable', 'email', 'max:255'],
                 'url' => [($field['required'] ?? false) ? 'required' : 'nullable', 'url', 'max:2000'],
                 'number' => [($field['required'] ?? false) ? 'required' : 'nullable', 'integer', 'min:0', 'max:1000000'],
+                'percent' => [($field['required'] ?? false) ? 'required' : 'nullable', 'numeric', 'min:0', 'max:100'],
                 'boolean' => ['nullable'],
                 'secret' => ['nullable', 'string', 'max:2000'],
                 'select' => ['nullable', 'string', 'in:'.implode(',', array_keys($field['options'] ?? []))],
@@ -45,7 +46,11 @@ class UpdateSettingsRequest extends FormRequest
                 $rules['secret_'.$flat] = ['nullable', 'string', 'max:2000'];
             }
             if ($field['type'] === 'image') {
-                $rules['img_'.$flat] = ['nullable', 'image', 'max:2048'];
+                // A field may declare its own mime list (e.g. the favicon
+                // allows .ico, which Laravel's `image` rule does not).
+                $imageRules = ['nullable', 'max:2048'];
+                $imageRules[] = ! empty($field['mimes']) ? 'mimes:'.$field['mimes'] : 'image';
+                $rules['img_'.$flat] = $imageRules;
                 $rules['remove_img_'.$flat] = ['nullable'];
             }
         }

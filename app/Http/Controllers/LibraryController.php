@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DownloadLog;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\PriceService;
 use Illuminate\Support\Facades\URL;
 use Illuminate\View\View;
 
@@ -14,6 +15,8 @@ use Illuminate\View\View;
  */
 class LibraryController extends Controller
 {
+    public function __construct(protected PriceService $prices) {}
+
     public function index(): View
     {
         $items = OrderItem::query()
@@ -33,6 +36,12 @@ class LibraryController extends Controller
             $used = DownloadLog::usedCount($item->order_id, $item->book_id);
             $item->downloads_used = $used;
             $item->downloads_left = max(0, $limit - $used);
+            // What the customer actually paid for this ebook, in the
+            // currency of the order — never the live book price.
+            $item->price_display = $this->prices->format(
+                (float) $item->unit_price,
+                $item->currency ?: 'INR'
+            );
             $item->download_url = $item->book && $item->book->hasFile() && $used < $limit
                 ? URL::temporarySignedRoute(
                     'download',
