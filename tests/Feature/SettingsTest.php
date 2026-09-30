@@ -365,8 +365,8 @@ class SettingsTest extends TestCase
         $this->post('/register', [
             'name' => 'Region User',
             'email' => $email,
-            'password' => 'Password123',
-            'password_confirmation' => 'Password123',
+            'password' => 'Password123!',
+            'password_confirmation' => 'Password123!',
             'country_code' => 'US',
         ])->assertRedirect('/verify-email');
 
