@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Category;
 use App\Models\Combo;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -26,16 +25,34 @@ class SitemapController extends Controller
 {
     public function sitemap()
     {
-        $xml = Cache::remember('sitemap.xml', now()->addHour(), function () {
-            $urls = [];
+        // NOTE: intentionally no Cache::remember and no Blade view here.
+        // The sitemap is crawler-facing infrastructure: it must never 500
+        // because of a cache-store hiccup or a view-compilation issue.
+        // URL sections are fault-isolated (a bad record is skipped and
+        // logged), and the XML is built with plain string concatenation
+        // so there is no Blade compilation step to fail.
+        $urls = [];
 
-            $this->addStaticUrls($urls);
-            $this->addBookUrls($urls);
-            $this->addCategoryUrls($urls);
-            $this->addComboUrls($urls);
+        $this->addStaticUrls($urls);
+        $this->addBookUrls($urls);
+        $this->addCategoryUrls($urls);
+        $this->addComboUrls($urls);
 
-            return view('sitemap', ['urls' => $urls])->render();
-        });
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+            .'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'."\n";
+
+        foreach ($urls as $u) {
+            $xml .= "    <url>\n"
+                .'        <loc>'.e($u['loc'])."</loc>\n";
+            if (! empty($u['lastmod'])) {
+                $xml .= '        <lastmod>'.e($u['lastmod'])."</lastmod>\n";
+            }
+            $xml .= '        <changefreq>'.e($u['changefreq'])."</changefreq>\n"
+                .'        <priority>'.e($u['priority'])."</priority>\n"
+                ."    </url>\n";
+        }
+
+        $xml .= "</urlset>\n";
 
         return response($xml, 200, ['Content-Type' => 'application/xml']);
     }
