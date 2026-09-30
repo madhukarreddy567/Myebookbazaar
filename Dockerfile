@@ -13,6 +13,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && a2enmod mpm_prefork rewrite \
     && rm -rf /var/lib/apt/lists/*
 
+# PHP upload limits for ebook PDFs (must cover the 200 MB BookRequest cap).
+# Without these, PHP's 2M/8M defaults reject real ebook uploads before
+# Laravel validation ever runs, and the admin sees a failed-upload error.
+RUN printf 'upload_max_filesize = 200M\npost_max_size = 210M\nmemory_limit = 512M\nmax_execution_time = 300\n' \
+    > /usr/local/etc/php/conf.d/uploads.ini
+
 # Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

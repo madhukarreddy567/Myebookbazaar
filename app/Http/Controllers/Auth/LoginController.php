@@ -17,7 +17,24 @@ class LoginController extends Controller
 
     public function show(): View
     {
-        return view('auth.login');
+        // Sidebar spotlight card: the real featured book (if any), priced
+        // for the visitor. Never invents data.
+        $spotlight = \App\Models\Book::query()
+            ->where('is_active', true)
+            ->where('is_featured', true)
+            ->orderBy('sort_order')
+            ->orderByDesc('id')
+            ->first();
+        if ($spotlight) {
+            $prices = app(\App\Services\PriceService::class);
+            $quote = $prices->getPrice($spotlight);
+            $spotlight->price_display = $prices->format($quote['amount'], $quote['currency']);
+            $spotlight->price_regular_display = $quote['regular_amount'] !== null
+                ? $prices->format($quote['regular_amount'], $quote['currency'])
+                : null;
+        }
+
+        return view('auth.login', compact('spotlight'));
     }
 
     public function store(LoginRequest $request): RedirectResponse

@@ -32,6 +32,9 @@ class CartController extends Controller
             $quote = $this->prices->getPrice($row->book, $user);
             $row->price_quote = $quote;
             $row->price_display = $this->prices->format($quote['amount'], $quote['currency']);
+            $row->price_regular_display = $quote['regular_amount'] !== null
+                ? $this->prices->format($quote['regular_amount'], $quote['currency'])
+                : null;
         }
 
         $summary = $this->prices->total(

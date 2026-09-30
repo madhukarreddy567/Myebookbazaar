@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\BookRequest;
 use App\Models\Book;
 use App\Models\Category;
 use App\Support\Audit;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -88,12 +89,41 @@ class BookController extends Controller
     {
         $old = $this->auditValues($book);
 
+        // Delete the ROW first: order_items.book_id is RESTRICT, so a
+        // book that appears in any historical order refuses deletion.
+        // The files must be deleted only after the row is gone —
+        // deleting them first would leave the surviving row pointing
+        // at files that no longer exist.
+        try {
+            $book->delete();
+        } catch (QueryException $e) {
+            if (! $this->isForeignKeyConstraintError($e)) {
+                throw $e;
+            }
+
+            return redirect()->route('reddy.books.index')->withErrors([
+                'book' => 'This book appears in historical orders and cannot be deleted (order history must stay intact). Deactivate it instead to remove it from the store.',
+            ]);
+        }
+
         $this->deleteFiles($book);
-        $book->delete();
 
         Audit::record('book.deleted', 'book', $book->id, $old, []);
 
         return redirect()->route('reddy.books.index')->with('status', 'Book deleted.');
+    }
+
+    /**
+     * True for a MySQL foreign-key violation on delete (1451: cannot
+     * delete a parent row while children reference it). Any other
+     * database error is real and must surface, not be mistaken for
+     * the "in historical orders" case.
+     */
+    protected function isForeignKeyConstraintError(QueryException $e): bool
+    {
+        $info = $e->errorInfo ?? [];
+
+        return ($info[1] ?? null) == 1451;
     }
 
     /**
@@ -149,6 +179,7 @@ class BookController extends Controller
             Storage::disk('local')->delete($book->file_path);
             $book->file_path = null;
             $book->file_size = null;
+            $book->original_filename = null;
         }
 
         if ($request->hasFile('pdf')) {
@@ -158,6 +189,7 @@ class BookController extends Controller
             $pdf = $request->file('pdf');
             $book->file_path = $pdf->store('ebooks', 'local');
             $book->file_size = $pdf->getSize();
+            $book->original_filename = $pdf->getClientOriginalName();
         }
     }
 

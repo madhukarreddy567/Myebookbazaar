@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -50,6 +51,22 @@ class TwoFactorController extends Controller
             return redirect()->route('reddy.login');
         }
 
+        // Brute-force guard: a TOTP code is only 6 digits and this
+        // endpoint is reachable right after a correct password, so
+        // unlimited guessing would eventually land a code. Five wrong
+        // guesses per minute per admin+IP, then a 429 lockout — the
+        // same posture as the admin password login. Keyed per admin so
+        // one account's failures never lock out another admin.
+        $throttleKey = '2fa-challenge:'.(int) $adminId.':'.$request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            Security::log('2fa.challenge_lockout', 'Admin 2FA challenge locked out after repeated failures.', [
+                'admin_id' => (int) $adminId,
+            ]);
+
+            abort(429, 'Too many attempts. Please wait a minute and try again.');
+        }
+
         $request->validate(['code' => ['required', 'string', 'max:32']]);
 
         /** @var Admin|null $admin */
@@ -76,6 +93,7 @@ class TwoFactorController extends Controller
         }
 
         if (! $this->totp->verify($admin->two_factor_secret, $code)) {
+            RateLimiter::hit($throttleKey, 60);
             Security::log('2fa.challenge_failed', 'Admin 2FA challenge failed.', ['admin_id' => $admin->id]);
 
             throw ValidationException::withMessages([
@@ -88,6 +106,10 @@ class TwoFactorController extends Controller
 
     protected function finishChallenge(Request $request, Admin $admin): RedirectResponse
     {
+        // A correct code proves the admin is legitimate: clear the
+        // brute-force counter so an earlier typo doesn't punish them.
+        RateLimiter::clear('2fa-challenge:'.(int) $admin->id.':'.$request->ip());
+
         Auth::guard('admin')->login($admin, (bool) $request->session()->pull('two_factor_remember', false));
         $request->session()->forget('two_factor_admin_id');
         $request->session()->regenerate();

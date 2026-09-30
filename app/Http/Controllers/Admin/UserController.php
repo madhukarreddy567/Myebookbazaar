@@ -65,6 +65,7 @@ class UserController extends Controller
             ->map(fn ($orders) => $orders->sum('grand_total'));
 
         $downloads = \App\Models\DownloadLog::where('user_id', $user->id)
+            ->whereNotNull('downloaded_at')
             ->with('book')->orderByDesc('downloaded_at')->limit(10)->get();
 
         return view('admin.users.show', [

@@ -87,7 +87,7 @@ class OrderController extends Controller
     {
         $query = Order::with(['user', 'items'])->latest();
 
-        if ($request->filled('status') && in_array((string) $request->string('status'), ['pending', 'paid', 'failed', 'cancelled'], true)) {
+        if ($request->filled('status') && in_array((string) $request->string('status'), ['pending', 'paid', 'failed', 'cancelled', 'refunded'], true)) {
             $query->where('status', $request->string('status'));
         }
 
@@ -118,7 +118,13 @@ class OrderController extends Controller
     {
         $order->load(['user', 'items.book', 'payments', 'downloadLogs.book']);
 
-        return view('admin.orders.show', compact('order'));
+        // Download tracking for refund-validity checks (no-refund policy):
+        // first successful download + total attempts, at a glance.
+        return view('admin.orders.show', [
+            'order' => $order,
+            'firstDownload' => $order->firstSuccessfulDownload(),
+            'downloadAttempts' => $order->downloadAttemptsCount(),
+        ]);
     }
 
     /**
@@ -134,8 +140,8 @@ class OrderController extends Controller
             'note.min' => 'The note must be at least 10 characters.',
         ]);
 
-        if ($order->isPaid()) {
-            return back()->with('status', 'This order is already paid.');
+        if (! $order->canTransitionTo(Order::STATUS_PAID)) {
+            return back()->with('status', 'This order cannot be marked as paid (status: '.$order->statusLabel().').');
         }
 
         $this->orders->markPaidManually($order, auth('admin')->id(), $data['note']);

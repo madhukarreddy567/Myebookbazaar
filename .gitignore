@@ -20,3 +20,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Stitch reference screens — never commit (design reference only)
+docs/stitch-screens/

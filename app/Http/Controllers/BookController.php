@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\Cart;
 use App\Models\Category;
+use App\Models\Rating;
 use App\Services\PriceService;
+use App\Services\SeoService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -41,6 +43,7 @@ class BookController extends Controller
             ->when(! in_array($request->input('sort'), ['price_asc', 'price_desc'], true),
                 fn ($query) => $query->orderByDesc('published_at')->orderByDesc('id'))
             ->with('category')
+            ->withRatingSummary()
             ->paginate(12)
             ->withQueryString();
 
@@ -66,6 +69,7 @@ class BookController extends Controller
             ->where('slug', $slug)
             ->where('is_active', true)
             ->with('category')
+            ->withRatingSummary()
             ->firstOrFail();
 
         $this->withPrice($book, $user);
@@ -76,10 +80,38 @@ class BookController extends Controller
             ->when($book->category_id, fn ($q) => $q->where('category_id', $book->category_id))
             ->orderBy('sort_order')
             ->limit(4)
+            ->withRatingSummary()
             ->get()
             ->map(fn (Book $b) => $this->withPrice($b, $user));
 
-        return view('books.show', compact('book', 'related'));
+        // Verified-purchase rating state for this visitor.
+        $userRating = null;
+        $canRate = false;
+        if ($user) {
+            $userRating = Rating::query()
+                ->where('user_id', $user->id)
+                ->where('book_id', $book->id)
+                ->first();
+            $canRate = $user->ownsBook($book);
+        }
+
+        // Public reviews: visible only, newest first.
+        $reviews = Rating::query()
+            ->where('book_id', $book->id)
+            ->visible()
+            ->with('user')
+            ->latest()
+            ->limit(10)
+            ->get();
+
+        return view('books.show', [
+            'book' => $book,
+            'related' => $related,
+            'seo' => app(SeoService::class),
+            'userRating' => $userRating,
+            'canRate' => $canRate,
+            'reviews' => $reviews,
+        ]);
     }
 
     /**

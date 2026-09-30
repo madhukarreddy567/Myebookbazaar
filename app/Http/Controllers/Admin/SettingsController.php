@@ -8,6 +8,7 @@ use App\Mail\SettingsTestMail;
 use App\Models\AuditLog;
 use App\Models\Country;
 use App\Models\Setting;
+use App\Services\RemoveBgService;
 use App\Services\SettingsService;
 use App\Settings\Definition;
 use App\Support\Audit;
@@ -80,7 +81,7 @@ class SettingsController extends Controller
         ]);
     }
 
-    public function update(UpdateSettingsRequest $request, SettingsService $settings)
+    public function update(UpdateSettingsRequest $request, SettingsService $settings, RemoveBgService $removeBg)
     {
         $tab = $request->input('tab');
         $adminId = auth('admin')->id();
@@ -135,7 +136,7 @@ class SettingsController extends Controller
                     break;
 
                 case 'image':
-                    $this->handleImage($request, $settings, $key, $adminId, $oldValues, $newValues);
+                    $this->handleImage($request, $settings, $removeBg, $key, $adminId, $oldValues, $newValues);
                     break;
 
                 default:
@@ -269,7 +270,7 @@ class SettingsController extends Controller
 
     // ------------------------------------------------------------------
 
-    protected function handleImage(UpdateSettingsRequest $request, SettingsService $settings, string $key, ?int $adminId, array &$oldValues, array &$newValues): void
+    protected function handleImage(UpdateSettingsRequest $request, SettingsService $settings, RemoveBgService $removeBg, string $key, ?int $adminId, array &$oldValues, array &$newValues): void
     {
         $flat = str_replace('.', '_', $key);
 
@@ -299,12 +300,48 @@ class SettingsController extends Controller
         $name = Str::random(32).'.'.$file->getClientOriginalExtension();
         $file->move($dir, $name);
 
+        $storedRelative = 'uploads/settings/'.$name;
+
+        // Optional remove.bg background removal: only for the site logo,
+        // only when an API key is configured. On API failure the original
+        // upload is kept and a warning is flashed — the upload never breaks.
+        $bgStatus = null;
+        if ($key === 'site.logo' && $removeBg->enabled()) {
+            $png = $removeBg->removeBackground($dir.'/'.$name);
+            if ($png === null) {
+                $bgStatus = 'failed';
+                session()->flash(
+                    'warning',
+                    'Logo saved, but background removal failed (remove.bg did not return an image). The original upload was kept.'
+                );
+            } else {
+                // The API returns a transparent PNG — store it under a .png
+                // name so the extension always matches the bytes. The
+                // original transparency is preserved (never flattened).
+                $pngName = pathinfo($name, PATHINFO_FILENAME).'.png';
+                file_put_contents($dir.'/'.$pngName, $png);
+                if ($pngName !== $name) {
+                    @unlink($dir.'/'.$name);
+                }
+                $storedRelative = 'uploads/settings/'.$pngName;
+                $bgStatus = 'applied';
+            }
+        }
+
         $this->deleteStoredImage($settings->get($key));
 
         $old = $settings->get($key);
-        $settings->set($key, 'uploads/settings/'.$name, $adminId);
+        $settings->set($key, $storedRelative, $adminId);
         $oldValues[$key] = $old;
-        $newValues[$key] = 'uploads/settings/'.$name;
+        $newValues[$key] = $storedRelative;
+
+        // Audit the background-removal outcome (never the API key).
+        if ($bgStatus !== null) {
+            Audit::record('settings.logo_background', 'settings', null, [], [
+                'result' => $bgStatus,
+                'file' => $storedRelative,
+            ], $adminId);
+        }
     }
 
     protected function deleteStoredImage(mixed $path): void
