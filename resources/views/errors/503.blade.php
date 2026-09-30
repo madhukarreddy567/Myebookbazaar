@@ -14,7 +14,7 @@
         <p class="text-mutedtext mt-3">The store will be back very soon. Thank you for waiting.</p>
     @endif
     <div class="mt-8">
-        <x-ui.button href="{{ route('home') }}" size="lg">Try again</x-ui.button>
+        <a href="{{ route('home') }}" class="st-btn st-btn-amber">Try again</a>
     </div>
 </div>
 @endsection

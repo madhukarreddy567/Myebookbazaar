@@ -16,6 +16,8 @@
     'badge' => null,
     'actionUrl' => null,
     'actionLabel' => 'View details',
+    'ratingAverage' => null,
+    'ratingCount' => 0,
 ])
 
 <article class="card overflow-hidden flex flex-col hover:shadow-raised transition-shadow">
@@ -42,6 +44,7 @@
         </h3>
         @if($author)<p class="text-[13px] text-mutedtext">by <span class="font-semibold text-inktext">{{ $author }}</span></p>@endif
         @if($description)<p class="text-sm text-mutedtext line-clamp-2">{{ $description }}</p>@endif
+        <p class="mt-1"><x-ui.rating-stars :average="$ratingAverage" :count="$ratingCount" star-class="w-3.5 h-3.5" /></p>
         <p class="flex items-baseline gap-2 mt-auto pt-2">
             @if($price)<span class="font-display text-2xl font-extrabold text-saffron-600">{{ $price }}</span>@endif
             @if($oldPrice)<span class="book-card-oldprice">{{ $oldPrice }}</span>@endif

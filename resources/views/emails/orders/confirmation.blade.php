@@ -12,6 +12,9 @@
 @endforeach
 </table>
 <p><strong>Total paid: {{ app(\App\Services\PriceService::class)->format((float) $order->grand_total, $order->currency) }}</strong></p>
+@if((float) $order->gst_rate > 0)
+<p style="color: #4E6870; font-size: 13px;">Includes GST ({{ \App\Services\OrderService::gstRateLabel((float) $order->gst_rate) }}%): {{ app(\App\Services\PriceService::class)->format((float) $order->gst_amount, $order->currency) }}</p>
+@endif
 <p>You can download your ebooks any time from <a href="{{ route('library') }}" style="color: #0F5566;">My Library</a>.</p>
 <p style="color: #4E6870; font-size: 13px;">Digital sales are final and non-refundable.</p>
 </body></html>

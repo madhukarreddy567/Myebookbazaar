@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('robots', 'noindex,nofollow')
+
 @section('title', 'Thank you — MyEbookBazaar')
 
 @php
@@ -15,6 +17,7 @@ foreach ($order->items as $it) {
 }
 $paidAt = $order->created_at ? $order->created_at->timezone('Asia/Kolkata')->format('d M Y, h:i A') : '';
 $symbol = $order->currency === 'INR' ? '₹' : '$';
+$gstRateLabel = \App\Services\OrderService::gstRateLabel((float) $order->gst_rate).'%';
 @endphp
 
 @section('content')
@@ -78,6 +81,12 @@ $symbol = $order->currency === 'INR' ? '₹' : '$';
                     <p class="price text-sm font-bold mt-0.5 truncate">{{ $symbol }}{{ number_format((float) $order->grand_total, 2) }} {{ $order->currency }}</p>
                 </div>
             </div>
+            @if((float) $order->gst_rate > 0)
+            <div class="mt-2 rounded-xl bg-tint-teal p-3 text-sm flex justify-between items-center">
+                <span class="text-mutedtext">Includes GST ({{ $gstRateLabel }})</span>
+                <span class="price font-bold">{{ $symbol }}{{ number_format((float) $order->gst_amount, 2) }}</span>
+            </div>
+            @endif
         </x-ui.card>
 
         @if($errors->any())

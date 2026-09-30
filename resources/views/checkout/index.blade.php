@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('robots', 'noindex,nofollow')
+
 @section('title', 'Checkout — MyEbookBazaar')
 
 @section('content')
@@ -53,7 +55,12 @@
                             </span>
                             <span class="display-sm text-teal-900 uppercase leading-tight block line-clamp-2">{{ $row->book->title }}</span>
                             <span class="text-sm text-mutedtext block mt-0.5">Digital PDF ebook{{ $row->book->author ? ' · by '.$row->book->author : '' }}</span>
-                            <span class="price font-display text-2xl font-extrabold text-saffron-600 block mt-1">{{ $row->price_display }}</span>
+                            <span class="price font-display text-2xl font-extrabold text-saffron-600 block mt-1">
+                                {{ $row->price_display }}
+                                @if($row->price_regular_display)
+                                    <span class="book-card-oldprice text-base font-semibold ml-1">{{ $row->price_regular_display }}</span>
+                                @endif
+                            </span>
                         </span>
                     </div>
                     @endforeach
@@ -76,6 +83,12 @@
                         <span class="text-mutedtext">Delivery fee (instant cloud link)</span>
                         <span class="font-bold text-teal-900 uppercase text-xs tracking-wider">Free</span>
                     </div>
+                    @if($summary['gst_rate'] > 0)
+                    <div class="flex justify-between">
+                        <span class="text-mutedtext">Includes GST ({{ $summary['gst_rate_label'] }}%)</span>
+                        <span class="price font-bold">{{ $summary['display_gst'] }}</span>
+                    </div>
+                    @endif
                     <div class="flex justify-between items-center pt-2.5 mt-1 border-t border-line">
                         <span class="font-bold text-lg">Final payable</span>
                         <span class="price font-display text-3xl font-extrabold text-saffron-600">{{ $summary['display_total'] }}</span>

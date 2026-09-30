@@ -9,7 +9,7 @@
     <h1 class="text-4xl font-extrabold mt-4">You cannot open this page</h1>
     <p class="text-mutedtext mt-3">This area needs a different account. If you believe this is a mistake, contact support.</p>
     <div class="mt-8">
-        <x-ui.button href="{{ route('home') }}" size="lg">Go to homepage</x-ui.button>
+        <a href="{{ route('home') }}" class="st-btn st-btn-amber">Go to homepage</a>
     </div>
 </div>
 @endsection

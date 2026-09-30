@@ -2,36 +2,46 @@
 
 @section('title', $combo->title.' — MyEbookBazaar')
 @section('meta_description', $combo->title.' — a bundle of '.($combo->combo_books->count()).' ebooks at one price.')
+@section('canonical', route('combos.show', $combo->slug))
+
+{{-- Schema.org breadcrumbs for the combo page. --}}
+@section('jsonld')
+{!! $seo->script($seo->breadcrumbJsonLd([
+    ['name' => 'Home', 'url' => route('home')],
+    ['name' => 'Combos', 'url' => route('combos')],
+    ['name' => $combo->title],
+])) !!}
+@endsection
 
 @section('content')
-<div class="max-w-container mx-auto px-4 py-10">
+<div class="max-w-container mx-auto px-4 pt-6 pb-10">
     <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'Combos', 'url' => route('combos')], ['label' => $combo->title]]" />
 
-    <div class="grid lg:grid-cols-[1fr_1.5fr] gap-8 mt-6">
+    <div class="grid lg:grid-cols-[1fr_1.5fr] gap-6 lg:gap-8 mt-6">
         {{-- Combo summary card --}}
         <div>
-            <x-ui.card>
+            <div class="st-card p-6 md:p-7">
                 <div class="flex flex-wrap gap-1.5 mb-3">
-                    <x-ui.badge>Combo</x-ui.badge>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#0B3D4A] text-white rounded-md px-2 py-1">Combo</span>
                     @if($combo->price_quote['on_sale'])
-                    <x-ui.badge type="sale">Sale</x-ui.badge>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#F5A623] text-[#101E28] rounded-md px-2 py-1">Sale</span>
                     @endif
                 </div>
-                <h1 class="display-md text-teal-900 uppercase">{{ $combo->title }}</h1>
+                <h1 class="st-h text-[30px]">{{ $combo->title }}</h1>
                 @if($combo->description)
-                <p class="text-mutedtext mt-3">{{ $combo->description }}</p>
+                <p class="st-muted mt-3 text-[15px]">{{ $combo->description }}</p>
                 @endif
 
-                <div class="book-card-price mt-4">
-                    <span class="price text-3xl">{{ $combo->price_display }}</span>
+                <p class="flex items-baseline gap-2.5 mt-4">
+                    <span class="text-[32px] font-extrabold text-[#0B3D4A]">{{ $combo->price_display }}</span>
                     @if($combo->price_regular_display)
                     <span class="book-card-oldprice text-lg">{{ $combo->price_regular_display }}</span>
                     @endif
-                </div>
+                </p>
                 @if($combo->price_quote['on_sale'] && $combo->sale_ends_at)
                 <div class="mt-2"><x-ui.countdown :ends-at="$combo->sale_ends_at->toIso8601String()" /></div>
                 @endif
-                <p class="text-xs text-mutedtext mt-1">One payment for all {{ $combo->combo_books->count() }} ebooks.</p>
+                <p class="text-xs st-muted mt-1">One payment for all {{ $combo->combo_books->count() }} ebooks.</p>
 
                 @if($errors->has('combo'))
                 <x-ui.alert type="danger" class="mt-4">{{ $errors->first('combo') }}</x-ui.alert>
@@ -49,26 +59,36 @@
                 @if(!$ownsAll)
                 <form method="POST" action="{{ route('combos.buy', $combo->slug) }}" class="mt-5">
                     @csrf
-                    <x-ui.button type="submit" class="w-full" icon="cart">
+                    <button type="submit" class="st-btn st-btn-amber w-full !min-h-[54px]">
+                        <x-ui.icon name="cart" class="w-5 h-5" />
                         {{ $ownedBooks->isNotEmpty() ? 'Buy combo anyway' : 'Buy combo' }} — {{ $combo->price_display }}
-                    </x-ui.button>
+                    </button>
                 </form>
                 @endif
-                <p class="text-xs text-mutedtext mt-3">You need an account to buy. If you already own every book in this combo, it cannot be bought again — each ebook is sold once.</p>
-            </x-ui.card>
+                <p class="text-xs st-muted mt-3">You need an account to buy. If you already own every book in this combo, it cannot be bought again — each ebook is sold once.</p>
+            </div>
         </div>
 
         {{-- Books in the combo --}}
         <div>
-            <h2 class="font-heading text-2xl font-bold mb-4">What you get ({{ $combo->combo_books->count() }})</h2>
+            <h2 class="st-h text-[24px] mb-4">What you get ({{ $combo->combo_books->count() }})</h2>
             <div class="grid gap-4 sm:grid-cols-2">
                 @foreach($combo->combo_books as $book)
-                <x-ui.book-card :title="$book->title"
-                                :author="$book->author"
-                                :description="$book->short_description"
-                                :cover="$book->coverUrl()"
-                                :action-url="route('books.show', $book->slug)"
-                                action-label="View details" />
+                @php($bookCover = $book->coverUrl() ?: (str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null))
+                <article class="st-book-card">
+                    <a href="{{ route('books.show', $book->slug) }}" class="st-book-cover block" tabindex="-1" aria-hidden="true">
+                        @if($bookCover)
+                            <img src="{{ $bookCover }}" alt="" loading="lazy">
+                        @endif
+                    </a>
+                    <div class="st-book-body">
+                        <h3 class="st-book-title line-clamp-2"><a href="{{ route('books.show', $book->slug) }}">{{ $book->title }}</a></h3>
+                        @if($book->author)
+                        <p class="st-book-meta">by {{ $book->author }}</p>
+                        @endif
+                        <a href="{{ route('books.show', $book->slug) }}" class="st-add-cart w-full mt-3 no-underline">View details</a>
+                    </div>
+                </article>
                 @endforeach
             </div>
         </div>
