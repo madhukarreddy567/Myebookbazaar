@@ -293,7 +293,7 @@ class OrderService
                 return $locked;
             }
 
-            $locked->update(['status' => Order::STATUS_PAID]);
+            $locked->update(['status' => Order::STATUS_PAID, 'paid_at' => now()]);
 
             if ($payment) {
                 $payment->update(['status' => Payment::STATUS_CAPTURED]);
@@ -372,7 +372,7 @@ class OrderService
                 return $locked;
             }
 
-            $locked->update(['status' => Order::STATUS_PAID, 'payment_method' => 'manual']);
+            $locked->update(['status' => Order::STATUS_PAID, 'payment_method' => 'manual', 'paid_at' => now()]);
 
             Payment::create([
                 'order_id' => $locked->id,

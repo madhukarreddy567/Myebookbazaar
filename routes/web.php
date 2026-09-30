@@ -15,6 +15,7 @@ use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\OfferController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\RatingController;
 use App\Http\Controllers\SitemapController;
@@ -49,6 +50,15 @@ Route::middleware('guest.browsing')->group(function () {
         ->middleware('throttle:60,1')
         ->name('books');
     Route::get('/books/{slug}', [BookController::class, 'show'])->name('books.show');
+
+    // Ebook preview: first N pages as protected images.
+    Route::get('/books/{slug}/preview', [PreviewController::class, 'show'])
+        ->middleware('throttle:30,1')
+        ->name('books.preview');
+    Route::get('/books/{slug}/preview/page/{page}', [PreviewController::class, 'page'])
+        ->middleware('throttle:60,1')
+        ->where('page', '[0-9]+')
+        ->name('books.preview.page');
 
     // Phase 4: combos and offers.
     Route::get('/combos', [ComboController::class, 'index'])
@@ -260,4 +270,30 @@ Route::middleware('customer')->group(function () {
 Route::post('/webhooks/razorpay', [WebhookController::class, 'razorpay'])
     ->middleware('throttle:60,1')
     ->name('webhooks.razorpay');
+
+/*
+|----------------------------------------------------------------------
+| Cookie consent — server-side persistence.
+| The banner JS calls this endpoint to ensure the consent cookie is set
+| with proper attributes (Secure on HTTPS, SameSite=Lax, 1-year expiry).
+| This fixes the "popup keeps reappearing" issue where JS-set cookies
+| weren't persisting reliably across sessions.
+|----------------------------------------------------------------------
+*/
+Route::post('/cookie-consent', function (\Illuminate\Http\Request $request) {
+    $choice = $request->input('choice') === 'accepted' ? 'accepted' : 'declined';
+
+    return response()->json(['ok' => true])
+        ->cookie(
+            'meb_cookie_consent',
+            $choice,
+            525600, // 1 year in minutes
+            '/',
+            null,
+            $request->isSecure(),
+            false, // not httpOnly — JS needs to read it
+            false,
+            'Lax'
+        );
+})->name('cookie.consent');
 

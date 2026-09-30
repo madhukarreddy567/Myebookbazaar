@@ -12,6 +12,16 @@ use Illuminate\Support\Str;
 class Book extends Model
 {
     /**
+     * Default attribute values for new books.
+     */
+    protected $attributes = [
+        'preview_enabled' => true,
+        'preview_pages' => 5,
+        'is_popular' => false,
+        'popular_score' => 0,
+    ];
+
+    /**
      * Model-level safety net: a slug is always generated from the title
      * when none is supplied (unique). The admin panel generates slugs
      * itself; this covers any other creation path (seeders, API).
@@ -21,6 +31,13 @@ class Book extends Model
         static::saving(function (Book $book) {
             if (trim((string) $book->slug) === '') {
                 $book->slug = static::generateUniqueSlug((string) $book->title, $book->id);
+            }
+        });
+
+        // Auto-generate SKU on creation when not supplied.
+        static::created(function (Book $book) {
+            if (! $book->sku) {
+                app(\App\Services\SkuService::class)->ensureSku($book);
             }
         });
     }
@@ -47,6 +64,7 @@ class Book extends Model
         'category_id',
         'title',
         'slug',
+        'sku',
         'subtitle',
         'description',
         'short_description',
@@ -68,6 +86,10 @@ class Book extends Model
         'published_at',
         'is_active',
         'is_featured',
+        'preview_enabled',
+        'preview_pages',
+        'is_popular',
+        'popular_score',
         'sort_order',
     ];
 
@@ -83,6 +105,10 @@ class Book extends Model
             'published_at' => 'date',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
+            'preview_enabled' => 'boolean',
+            'preview_pages' => 'integer',
+            'is_popular' => 'boolean',
+            'popular_score' => 'integer',
         ];
     }
 

@@ -178,6 +178,20 @@
                 <label class="flex items-center gap-2 text-sm font-semibold">
                     <input type="checkbox" name="is_featured" value="1" @checked(old('is_featured', $book->is_featured)) class="w-4 h-4"> Featured on home
                 </label>
+                <label class="flex items-center gap-2 text-sm font-semibold">
+                    <input type="checkbox" name="preview_enabled" value="1" @checked(old('preview_enabled', $book->preview_enabled ?? true)) class="w-4 h-4"> Enable preview
+                </label>
+                <div>
+                    <label for="sku" class="field-label">SKU (auto-generated if blank)</label>
+                    <input id="sku" name="sku" type="text" maxlength="50"
+                           value="{{ old('sku', $book->sku) }}" class="input"
+                           placeholder="e.g. FIT-001-E1">
+                </div>
+                <div>
+                    <label for="preview_pages" class="field-label">Preview pages (max)</label>
+                    <input id="preview_pages" name="preview_pages" type="number" min="1" max="50"
+                           value="{{ old('preview_pages', $book->preview_pages ?? 5) }}" class="input">
+                </div>
                 <div>
                     <label for="sort_order" class="field-label">Sort order</label>
                     <input id="sort_order" name="sort_order" type="number" min="0"

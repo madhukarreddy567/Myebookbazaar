@@ -60,6 +60,7 @@ class Order extends Model
         'coupon_code',
         'no_refund_accepted',
         'no_refund_accepted_at',
+        'paid_at',
         'ip_address',
         'user_agent',
     ];
@@ -75,6 +76,7 @@ class Order extends Model
             'grand_total' => 'decimal:2',
             'no_refund_accepted' => 'boolean',
             'no_refund_accepted_at' => 'datetime',
+            'paid_at' => 'datetime',
         ];
     }
 

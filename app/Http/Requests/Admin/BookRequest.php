@@ -39,6 +39,9 @@ class BookRequest extends FormRequest
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'is_active' => ['nullable', 'boolean'],
             'is_featured' => ['nullable', 'boolean'],
+            'sku' => ['nullable', 'string', 'max:50'],
+            'preview_enabled' => ['nullable', 'boolean'],
+            'preview_pages' => ['nullable', 'integer', 'min:1', 'max:50'],
             'cover' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
             'remove_cover' => ['nullable', 'boolean'],
             // Ebook PDFs up to 200 MB. The Docker image must allow this too

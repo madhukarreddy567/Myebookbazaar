@@ -583,7 +583,7 @@ class UpdaterPhase7Test extends TestCase
         $this->artisan('backups:auto')->assertSuccessful();
         $backup = Backup::where('type', 'auto')->latest('id')->first();
         $this->assertNotNull($backup);
-        $this->assertSame('1.0.0', $backup->version);
+        $this->assertSame('1.0.1', $backup->version);
         $this->backupFiles[] = $backup->filename;
     }
 

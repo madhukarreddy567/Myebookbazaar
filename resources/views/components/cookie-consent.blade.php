@@ -30,14 +30,26 @@
     </div>
     <script>
         function mebCookieConsent(choice) {
-            var expires = new Date();
-            expires.setFullYear(expires.getFullYear() + 1);
-            document.cookie = 'meb_cookie_consent=' + choice
-                + '; expires=' + expires.toUTCString()
-                + '; path=/; SameSite=Lax';
-            var banner = document.getElementById('cookie-consent-banner');
-            if (banner) banner.remove();
-            if (choice === 'accepted') location.reload();
+            // Set via server-side endpoint for reliable persistence.
+            fetch('{{ route('cookie.consent') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+                },
+                body: JSON.stringify({ choice: choice })
+            }).finally(function() {
+                // Fallback: also set via JS in case the fetch fails.
+                var expires = new Date();
+                expires.setFullYear(expires.getFullYear() + 1);
+                var secure = location.protocol === 'https:' ? '; Secure' : '';
+                document.cookie = 'meb_cookie_consent=' + choice
+                    + '; expires=' + expires.toUTCString()
+                    + '; path=/' + secure + '; SameSite=Lax';
+                var banner = document.getElementById('cookie-consent-banner');
+                if (banner) banner.remove();
+                if (choice === 'accepted') location.reload();
+            });
         }
     </script>
 @endif
