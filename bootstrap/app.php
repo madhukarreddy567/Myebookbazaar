@@ -21,6 +21,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // The cookie-consent choice is written by plain JavaScript
+        // (document.cookie), so it must NOT be encrypted — otherwise
+        // Laravel fails to decrypt it, reads it as null, and the banner
+        // re-appears on every page load.
+        $middleware->encryptCookies(except: ['meb_cookie_consent']);
         // Trusted proxies (Cloudflare): set TRUSTED_PROXIES=* in .env when
         // the site sits behind Cloudflare so request->ip() returns the real
         // visitor IP instead of Cloudflare's. Leave empty when NOT behind a
