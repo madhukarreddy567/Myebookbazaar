@@ -14,9 +14,11 @@ use App\Http\Controllers\Admin\OfferController as AdminOfferController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\PasswordController;
 use App\Http\Controllers\Admin\PageController as AdminPageController;
+use App\Http\Controllers\Admin\RatingController as AdminRatingController;
 use App\Http\Controllers\Admin\SessionController;
 use App\Http\Controllers\Admin\SecurityLogController;
 use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\TicketController as AdminTicketController;
 use App\Http\Controllers\Admin\TwoFactorController;
 use App\Http\Controllers\Admin\UpdateController;
 use App\Http\Controllers\Admin\UserController as AdminUserMgmtController;
@@ -83,6 +85,20 @@ Route::prefix('reddy')->name('reddy.')->group(function () {
         Route::post('/users/{user}/block', [AdminUserMgmtController::class, 'block'])->name('users.block');
         Route::post('/users/{user}/unblock', [AdminUserMgmtController::class, 'unblock'])->name('users.unblock');
         Route::put('/users/{user}/country', [AdminUserMgmtController::class, 'updateCountry'])->name('users.country');
+
+        // Reviews — verified-purchase rating moderation (hide/unhide/delete,
+        // every action audit-logged).
+        Route::get('/reviews', [AdminRatingController::class, 'index'])->name('reviews.index');
+        Route::post('/reviews/{rating}/toggle', [AdminRatingController::class, 'toggle'])->name('reviews.toggle');
+        Route::delete('/reviews/{rating}', [AdminRatingController::class, 'destroy'])->name('reviews.destroy');
+
+        // Support tickets — inbox, thread, reply, close/reopen.
+        // Every action is audit-logged.
+        Route::get('/tickets', [AdminTicketController::class, 'index'])->name('tickets.index');
+        Route::get('/tickets/{ticket}', [AdminTicketController::class, 'show'])->name('tickets.show');
+        Route::post('/tickets/{ticket}/reply', [AdminTicketController::class, 'reply'])->name('tickets.reply');
+        Route::post('/tickets/{ticket}/close', [AdminTicketController::class, 'close'])->name('tickets.close');
+        Route::post('/tickets/{ticket}/reopen', [AdminTicketController::class, 'reopen'])->name('tickets.reopen');
 
         // Sessions (Phase 5) — the logged-in admin's own sessions.
         Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');

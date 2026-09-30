@@ -16,8 +16,10 @@ use App\Http\Controllers\OfferController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PrivacyController;
+use App\Http\Controllers\RatingController;
 use App\Http\Controllers\SitemapController;
 use App\Http\Controllers\StoreController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\WebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,23 +34,31 @@ require __DIR__.'/admin.php';
 Route::get('/', [StoreController::class, 'index'])->name('home');
 
 // SEO: dynamic sitemap and robots.txt (served by the app so the sitemap
-// URL always matches APP_URL).
-Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])->name('sitemap');
+// URL always matches APP_URL). Throttled: sitemap generation is DB-heavy
+// and a favourite scraper target; 30/min is plenty for real crawlers.
+Route::get('/sitemap.xml', [SitemapController::class, 'sitemap'])
+    ->middleware('throttle:30,1')
+    ->name('sitemap');
 Route::get('/robots.txt', [SitemapController::class, 'robots'])->name('robots');
 
 Route::middleware('guest.browsing')->group(function () {
-    Route::get('/books', [BookController::class, 'index'])->name('books');
+    // Public search / filter listings are DB-heavy (LIKE queries) — throttle
+    // per IP so a scraper loop can't saturate the database. 60/min is
+    // generous for human browsing.
+    Route::get('/books', [BookController::class, 'index'])
+        ->middleware('throttle:60,1')
+        ->name('books');
     Route::get('/books/{slug}', [BookController::class, 'show'])->name('books.show');
 
     // Phase 4: combos and offers.
     Route::get('/combos', [ComboController::class, 'index'])
-        ->middleware('feature:features.combos')
+        ->middleware(['feature:features.combos', 'throttle:60,1'])
         ->name('combos');
     Route::get('/combos/{slug}', [ComboController::class, 'show'])
         ->middleware('feature:features.combos')
         ->name('combos.show');
     Route::get('/offers', [OfferController::class, 'index'])
-        ->middleware('feature:features.sales_offers')
+        ->middleware(['feature:features.sales_offers', 'throttle:60,1'])
         ->name('offers');
 });
 Route::post('/books/{slug}/buy-now', [BookController::class, 'buyNow'])
@@ -90,7 +100,7 @@ Route::middleware('guest:web')->group(function () {
         ->middleware('feature:features.registration')
         ->name('register');
     Route::post('/register', [RegisterController::class, 'store'])
-        ->middleware(['feature:features.registration']);
+        ->middleware(['feature:features.registration', 'throttle:5,1']);
 
     Route::get('/login', [LoginController::class, 'show'])
         ->middleware('feature:features.login')
@@ -174,10 +184,10 @@ Route::middleware('customer')->group(function () {
         ->middleware(['feature:features.checkout', 'feature:features.coupons', 'verified.if.enabled'])
         ->name('checkout.coupon.remove');
     Route::post('/checkout/verify', [CheckoutController::class, 'verify'])
-        ->middleware(['feature:features.checkout', 'throttle:20,1'])
+        ->middleware(['feature:features.checkout', 'verified.if.enabled', 'throttle:20,1'])
         ->name('checkout.verify');
     Route::post('/checkout/report-failure', [CheckoutController::class, 'reportFailure'])
-        ->middleware(['feature:features.checkout', 'throttle:20,1'])
+        ->middleware(['feature:features.checkout', 'verified.if.enabled', 'throttle:20,1'])
         ->name('checkout.report-failure');
     Route::get('/checkout/thank-you/{order}', [CheckoutController::class, 'thankyou'])
         ->middleware('verified.if.enabled')
@@ -191,12 +201,54 @@ Route::middleware('customer')->group(function () {
         ->name('orders.show');
 
     Route::get('/library', [LibraryController::class, 'index'])
-        ->middleware('verified.if.enabled')
+        // Each view generates fresh signed download URLs (DB reads per
+        // book), so the page gets the same 60/min per-IP throttle as
+        // the other browsing listings — a scraper loop cannot turn it
+        // into a cheap signed-URL mint.
+        ->middleware(['verified.if.enabled', 'throttle:60,1'])
         ->name('library');
 
+    // Signed download links (10-min expiry). Throttled per IP AFTER the
+    // signature check so only valid, entitled downloads count — this caps
+    // file-serving abuse (the most expensive operation on the box).
     Route::get('/download/{order}/{book}', [DownloadController::class, 'download'])
-        ->middleware(['feature:features.downloads', 'signed'])
+        ->middleware(['feature:features.downloads', 'signed', 'throttle:30,1'])
         ->name('download');
+
+    /*
+    |----------------------------------------------------------------------
+    | Verified-purchase-only ratings. Eligibility is enforced server-side
+    | by RatingPolicy (paid-order ownership). 5/min throttles review spam.
+    |----------------------------------------------------------------------
+    */
+    Route::post('/books/{book:slug}/ratings', [RatingController::class, 'store'])
+        ->middleware('throttle:5,1')
+        ->name('books.ratings.store');
+    Route::put('/books/{book:slug}/ratings/{rating}', [RatingController::class, 'update'])
+        ->middleware('throttle:5,1')
+        ->name('books.ratings.update');
+
+    /*
+    |----------------------------------------------------------------------
+    | Support tickets (account area). Customers see ONLY their own
+    | tickets — enforced by TicketPolicy on show/reply.
+    |----------------------------------------------------------------------
+    */
+    Route::get('/account/support', [TicketController::class, 'index'])
+        ->middleware('verified.if.enabled')
+        ->name('support.index');
+    Route::get('/account/support/new', [TicketController::class, 'create'])
+        ->middleware('verified.if.enabled')
+        ->name('support.create');
+    Route::post('/account/support', [TicketController::class, 'store'])
+        ->middleware(['verified.if.enabled', 'throttle:5,1'])
+        ->name('support.store');
+    Route::get('/account/support/{ticket}', [TicketController::class, 'show'])
+        ->middleware('verified.if.enabled')
+        ->name('support.show');
+    Route::post('/account/support/{ticket}/reply', [TicketController::class, 'reply'])
+        ->middleware(['verified.if.enabled', 'throttle:10,1'])
+        ->name('support.reply');
 });
 
 /*
