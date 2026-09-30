@@ -109,4 +109,66 @@ class AbuseThrottlingTest extends TestCase
         // No rate-limit headers: the limiter was never consulted.
         $this->assertFalse($response->headers->has('X-RateLimit-Limit'));
     }
+
+    /**
+     * REGRESSION (2026-09-30): the first version of this middleware
+     * extended Laravel's ThrottleRequests, whose request signature needs
+     * $request->route(). Global middleware runs BEFORE routing, so every
+     * guest request on production threw
+     * "Unable to generate the request signature. Route unavailable."
+     * and the whole site returned 500. The suite never caught it because
+     * the middleware skipped itself in unit tests.
+     *
+     * This test runs the middleware the way production does — no route
+     * resolved on the request — and requires it to pass the request
+     * through instead of exploding.
+     */
+    private function activeGlobalThrottle(): GlobalAbuseThrottle
+    {
+        return new class(app(RateLimiter::class)) extends GlobalAbuseThrottle {
+            protected function shouldSkip($request): bool
+            {
+                return false;
+            }
+        };
+    }
+
+    public function test_global_abuse_throttle_works_before_routing(): void
+    {
+        $middleware = $this->activeGlobalThrottle();
+
+        // No route bound — exactly the state of a request hitting the
+        // global middleware stack before the router runs.
+        $request = Request::create('/', 'GET');
+        $this->assertNull($request->route());
+
+        $response = $middleware->handle($request, fn () => response('ok'));
+
+        $this->assertSame(200, $response->getStatusCode());
+        $this->assertSame('ok', $response->getContent());
+        $this->assertSame('600', $response->headers->get('X-RateLimit-Limit'));
+    }
+
+    public function test_global_abuse_throttle_blocks_after_limit(): void
+    {
+        $middleware = $this->activeGlobalThrottle();
+        $request = Request::create('/', 'GET', [], [], [], ['REMOTE_ADDR' => '203.0.113.99']);
+        $next = fn () => response('ok');
+
+        $this->assertSame(200, $middleware->handle($request, $next, 2, 1)->getStatusCode());
+        $this->assertSame(200, $middleware->handle($request, $next, 2, 1)->getStatusCode());
+
+        $this->expectException(\Illuminate\Http\Exceptions\ThrottleRequestsException::class);
+        $middleware->handle($request, $next, 2, 1);
+    }
+
+    public function test_homepage_ok_with_global_throttle_active(): void
+    {
+        // Full-stack reproduction of the production outage: the global
+        // middleware stack runs with the throttle ACTIVE (as on Railway),
+        // and a guest GET / must still render instead of 500ing.
+        $this->app->bind(GlobalAbuseThrottle::class, fn ($app) => $this->activeGlobalThrottle());
+
+        $this->getAsIp('/', '203.0.113.100')->assertOk();
+    }
 }
