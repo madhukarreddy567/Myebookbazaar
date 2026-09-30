@@ -16,7 +16,7 @@
         <div class="grid gap-4 md:gap-5 grid-cols-2 lg:grid-cols-4">
             @foreach($books as $book)
             @php
-                $cover = $book->coverUrl() ?: (str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null);
+                $cover = $book->displayCoverUrl();
             @endphp
             <article class="st-book-card">
                 <a href="{{ route('books.show', $book->slug) }}" class="st-book-cover block" tabindex="-1" aria-hidden="true">

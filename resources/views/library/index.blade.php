@@ -114,9 +114,7 @@ $regionLabel = auth()->user() && auth()->user()->pricing_region === 'INTL' ? 'IN
             @php
                 $book = $item->book;
                 $sizeLabel = $book ? $fmtSize($book->file_size) : null;
-                $cover = $book && $book->coverUrl()
-                    ? $book->coverUrl()
-                    : ($book && str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null);
+                $cover = $book?->displayCoverUrl();
                 $titleLower = mb_strtolower($item->title ?? ($book->title ?? ''));
                 $catId = $book && $book->category_id ? (string) $book->category_id : '';
                 $pct = $limit > 0 ? (int) round($item->downloads_left / $limit * 100) : 0;

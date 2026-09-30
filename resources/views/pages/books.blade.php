@@ -52,7 +52,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 mt-6">
         @foreach($books as $book)
         @php
-            $cover = $book->coverUrl() ?: (str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null);
+            $cover = $book->displayCoverUrl();
             $onSale = $book->price_quote['on_sale'] ?? false;
         @endphp
         <article class="st-book-card">

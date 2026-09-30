@@ -104,7 +104,7 @@
                     <x-ui.icon name="search" class="w-[18px] h-[18px] text-[#8A98A5] shrink-0" />
                     <label for="nav-search" class="sr-only">Search titles, authors, genres</label>
                     <input id="nav-search" name="q" type="search" value="{{ request('q') }}"
-                           placeholder="Search titles, authors, genres" autocomplete="off">
+                           placeholder="Search books…" autocomplete="off">
                     <span class="st-kbd" aria-hidden="true">Ctrl K</span>
                 </div>
             </form>
@@ -176,7 +176,7 @@
                     <x-ui.icon name="search" class="w-[18px] h-[18px] text-[#8A98A5] shrink-0" />
                     <label for="mobile-search" class="sr-only">Search ebooks</label>
                     <input id="mobile-search" name="q" type="search" value="{{ request('q') }}"
-                           placeholder="Search titles, authors, genres" autocomplete="off">
+                           placeholder="Search books…" autocomplete="off">
                 </div>
             </form>
         </div>
