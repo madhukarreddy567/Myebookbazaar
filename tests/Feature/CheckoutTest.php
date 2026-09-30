@@ -471,6 +471,7 @@ class CheckoutTest extends TestCase
             DownloadLog::create([
                 'user_id' => $user->id, 'book_id' => $book->id,
                 'order_id' => $order->id, 'ip_address' => '127.0.0.1',
+                'downloaded_at' => now(),
             ]);
         }
 

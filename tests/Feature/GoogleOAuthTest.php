@@ -7,6 +7,7 @@ use App\Models\Cart;
 use App\Models\User;
 use App\Services\SettingsService;
 use Database\Seeders\SettingsSeeder;
+use Database\Seeders\StoreSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Facades\Socialite;
@@ -27,6 +28,9 @@ class GoogleOAuthTest extends TestCase
     {
         parent::setUp();
         $this->seed(SettingsSeeder::class);
+        // The cart-merge test needs the launch catalogue book; seed it
+        // here (idempotent) instead of relying on ambient DB state.
+        $this->seed(StoreSeeder::class);
         app(SettingsService::class)->forgetCache();
     }
 
@@ -366,5 +370,18 @@ class GoogleOAuthTest extends TestCase
         $raw = \App\Models\Setting::where('key', 'auth.google.client_secret')->value('value');
         $this->assertNotSame($secret, $raw);
         $this->assertSame($secret, app(SettingsService::class)->get('auth.google.client_secret'));
+    }
+
+    public function test_settings_shows_authorized_redirect_uri(): void
+    {
+        $admin = $this->makeAdmin();
+
+        $this->actingAs($admin, 'admin')
+            ->get(route('reddy.settings', ['tab' => 'updates']))
+            ->assertOk()
+            // The exact Authorized redirect URI the owner must paste
+            // into Google Cloud Console (with a copy button).
+            ->assertSee('Authorized redirect URI', false)
+            ->assertSee(route('auth.google.callback'), false);
     }
 }
