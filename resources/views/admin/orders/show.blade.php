@@ -42,6 +42,9 @@
             <dl class="p-4 space-y-1 text-sm max-w-xs ml-auto">
                 <div class="flex justify-between"><dt style="color: var(--color-muted)">Subtotal</dt><dd class="tabular-nums">{{ $order->currency }} {{ number_format((float) $order->subtotal, 2) }}</dd></div>
                 <div class="flex justify-between"><dt style="color: var(--color-muted)">Discount</dt><dd class="tabular-nums">{{ $order->currency }} {{ number_format((float) $order->discount_total, 2) }}</dd></div>
+                @if((float) $order->gst_rate > 0)
+                <div class="flex justify-between"><dt style="color: var(--color-muted)">GST ({{ \App\Services\OrderService::gstRateLabel((float) $order->gst_rate) }}%, included in total)</dt><dd class="tabular-nums">{{ $order->currency }} {{ number_format((float) $order->gst_amount, 2) }}</dd></div>
+                @endif
                 <div class="flex justify-between font-extrabold text-base pt-2 border-t" style="border-color: var(--color-border)"><dt>Total</dt><dd class="tabular-nums">{{ $order->currency }} {{ number_format((float) $order->grand_total, 2) }}</dd></div>
             </dl>
         </div>
@@ -74,13 +77,14 @@
             <div class="p-4 border-b" style="border-color: var(--color-border)"><h2 class="font-extrabold text-lg">Download logs</h2></div>
             @if($order->downloadLogs->isNotEmpty())
             <table class="data-table">
-                <thead><tr><th scope="col">Ebook</th><th scope="col">IP</th><th scope="col">Downloaded at</th></tr></thead>
+                <thead><tr><th scope="col">Ebook</th><th scope="col">IP</th><th scope="col">User agent</th><th scope="col">Downloaded at</th></tr></thead>
                 <tbody>
                     @foreach($order->downloadLogs as $log)
                     <tr>
                         <td>{{ $log->book->title ?? '—' }}</td>
                         <td class="text-sm font-mono">{{ $log->ip_address }}</td>
-                        <td class="text-sm whitespace-nowrap">{{ $log->downloaded_at->timezone('Asia/Kolkata')->format('d M Y, H:i') }}</td>
+                        <td class="text-xs" title="{{ $log->user_agent }}">{{ \Illuminate\Support\Str::limit($log->user_agent ?? '—', 40) }}</td>
+                        <td class="text-sm whitespace-nowrap">{{ $log->downloaded_at?->timezone('Asia/Kolkata')->format('d M Y, H:i') ?? '—' }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -92,6 +96,22 @@
     </div>
 
     <div class="space-y-4">
+        {{-- Download status (refund-validity at a glance) --}}
+        <div class="surface p-5">
+            <h2 class="font-extrabold text-lg">Download status</h2>
+            <dl class="mt-3 space-y-2 text-sm">
+                <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Status</dt><dd class="font-medium text-right">
+                    @if($firstDownload)
+                        Downloaded at {{ $firstDownload->downloaded_at->timezone('Asia/Kolkata')->format('Y-m-d H:i:s') }}
+                    @else
+                        <x-admin.badge type="warning">Not Downloaded Yet</x-admin.badge>
+                    @endif
+                </dd></div>
+                <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">IP address</dt><dd class="font-mono text-xs">{{ $firstDownload->ip_address ?? '—' }}</dd></div>
+                <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Total attempts</dt><dd class="font-medium tabular-nums">{{ $downloadAttempts }}</dd></div>
+            </dl>
+        </div>
+
         {{-- Customer --}}
         <div class="surface p-5">
             <h2 class="font-extrabold text-lg">Customer</h2>
@@ -99,14 +119,16 @@
                 <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Name</dt><dd class="font-medium text-right">{{ $order->user->name ?? '—' }}</dd></div>
                 <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Email</dt><dd class="font-medium text-right break-all">{{ $order->user->email ?? '—' }}</dd></div>
                 <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Country</dt><dd class="font-medium">{{ $order->user->country_name ?? $order->user->country_code ?? '—' }}</dd></div>
-                <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Method</dt><dd class="font-medium">{{ $order->payment_method === 'manual' ? 'Manual' : 'Razorpay' }}</dd></div>
+                <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">Method</dt><dd class="font-medium">{{ $order->payment_method === 'manual' ? 'Manual' : ($order->payment_method === 'coupon' ? 'Coupon (free)' : 'Razorpay') }}</dd></div>
                 <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">No-refund accepted</dt><dd class="font-medium">{{ $order->no_refund_accepted ? 'Yes' : 'No' }}</dd></div>
                 <div class="flex justify-between gap-2"><dt style="color: var(--color-muted)">IP</dt><dd class="font-mono text-xs">{{ $order->ip_address ?? '—' }}</dd></div>
             </dl>
         </div>
 
-        {{-- Manual mark as paid --}}
-        @if(!$order->isPaid() && $order->status !== 'cancelled')
+        {{-- Manual mark as paid — only shown when the order can legally
+             transition to paid (pending/failed). Cancelled and refunded
+             orders can never be marked paid. --}}
+        @if($order->canTransitionTo(\App\Models\Order::STATUS_PAID))
         <div class="surface p-5 border-l-4" style="border-left-color: var(--color-danger)">
             <h2 class="font-extrabold text-lg">Mark as paid</h2>
             <p class="text-sm mt-1" style="color: var(--color-muted)">For payments received outside Razorpay (bank transfer, cash). A note is required and this action is audited.</p>

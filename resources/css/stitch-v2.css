@@ -1,0 +1,801 @@
+/**
+ * Stitch v2 customer design language (approved screens 01–04).
+ *
+ * Scoped under `body.st-page` (set in layouts/app.blade.php) so the
+ * /reddy admin panel is completely untouched by these rules.
+ * Palette sampled from the approved Stitch PNGs:
+ *   ice canvas #F6F7FD · white header/cards · deep teal #0B3D4A
+ *   amber CTA #F5A623 · input fill #EDF1F7 · hairline #E4E8F2
+ */
+
+/* ------------------------------------------------------------------
+   Base
+   ------------------------------------------------------------------ */
+body.st-page {
+    background: #F6F7FD;
+    color: #18262E;
+    font-family: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+body.st-page .st-h,
+body.st-page h1.st-h, body.st-page h2.st-h, body.st-page h3.st-h {
+    font-family: "DM Sans", system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #101E28;
+    line-height: 1.15;
+}
+
+body.st-page .st-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #D97706;
+}
+
+body.st-page .st-muted { color: #5C6B75; }
+
+/* ------------------------------------------------------------------
+   Announcement bar — deep teal, amber text
+   ------------------------------------------------------------------ */
+body.st-page .announcement-bar {
+    background: #0B3D4A;
+    color: #F5A623;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 0;
+}
+body.st-page .announcement-bar a { color: #F5A623; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ------------------------------------------------------------------
+   Header
+   ------------------------------------------------------------------ */
+body.st-page .st-header {
+    background: #FFFFFF;
+    border-bottom: 1px solid #E6EAF3;
+}
+body.st-page .st-navlink {
+    font-size: 15px;
+    font-weight: 500;
+    color: #18262E;
+    padding: 8px 2px;
+    position: relative;
+    white-space: nowrap;
+}
+body.st-page .st-navlink:hover { color: #0B3D4A; }
+body.st-page .st-navlink[aria-current="page"] {
+    font-weight: 800;
+    color: #0B3D4A;
+}
+body.st-page .st-navlink[aria-current="page"]::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 2px;
+    height: 2px;
+    border-radius: 2px;
+    background: #F5A623;
+}
+body.st-page .st-search-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #EDF1F7;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    padding: 0 8px 0 14px;
+    height: 42px;
+    width: 100%;
+    max-width: 300px;
+}
+body.st-page .st-search-pill:focus-within { border-color: #0B3D4A; background: #fff; }
+body.st-page .st-search-pill input {
+    background: transparent;
+    border: 0;
+    outline: 0;
+    flex: 1;
+    min-width: 0;
+    font-size: 14px;
+    color: #18262E;
+    height: 100%;
+}
+body.st-page .st-search-pill input::placeholder { color: #8A98A5; }
+body.st-page .st-kbd {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5C6B75;
+    background: #fff;
+    border: 1px solid #E4E8F2;
+    border-radius: 6px;
+    padding: 2px 7px;
+    white-space: nowrap;
+}
+body.st-page .st-region-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #18262E;
+    background: #F6F8FC;
+    border: 1px solid #E4E8F2;
+    border-radius: 999px;
+    padding: 8px 14px;
+    white-space: nowrap;
+}
+body.st-page .st-region-pill .dot { width: 7px; height: 7px; border-radius: 99px; background: #F5A623; }
+body.st-page .st-btn-register {
+    background: #0B3D4A;
+    color: #fff;
+    font-weight: 700;
+    font-size: 15px;
+    border-radius: 12px;
+    padding: 10px 22px;
+    white-space: nowrap;
+    transition: background 150ms ease;
+}
+body.st-page .st-btn-register:hover { background: #082E38; }
+body.st-page .st-login-link { font-weight: 700; font-size: 15px; color: #18262E; white-space: nowrap; }
+body.st-page .st-login-link:hover { color: #0B3D4A; }
+body.st-page .st-cart-badge {
+    position: absolute;
+    top: 2px; right: 0;
+    min-width: 18px; height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #F5A623;
+    color: #3A2503;
+    font-size: 11px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ------------------------------------------------------------------
+   Buttons
+   ------------------------------------------------------------------ */
+body.st-page .st-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 800;
+    border-radius: 14px;
+    min-height: 52px;
+    padding: 12px 26px;
+    font-size: 16px;
+    line-height: 1.3;
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+}
+body.st-page .st-btn:active { transform: translateY(1px); }
+body.st-page .st-btn-teal { background: #0B3D4A; color: #fff; box-shadow: 0 10px 24px rgb(11 61 74 / 0.25); }
+body.st-page .st-btn-teal:hover { background: #082E38; }
+body.st-page .st-btn-amber { background: #F5A623; color: #3A2503; box-shadow: 0 10px 24px rgb(245 166 35 / 0.35); }
+body.st-page .st-btn-amber:hover { background: #E8930C; }
+body.st-page .st-btn-white { background: #fff; color: #0B3D4A; border-color: #E4E8F2; box-shadow: 0 6px 16px rgb(11 61 74 / 0.10); }
+body.st-page .st-btn-white:hover { border-color: #0B3D4A; }
+body.st-page .st-btn-sm { min-height: 40px; padding: 8px 18px; font-size: 14px; border-radius: 10px; }
+body.st-page .st-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ------------------------------------------------------------------
+   Forms
+   ------------------------------------------------------------------ */
+body.st-page .st-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #18262E;
+    margin-bottom: 8px;
+}
+body.st-page .st-label .st-hint {
+    float: right;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8A98A5;
+}
+body.st-page .st-input-wrap { position: relative; }
+body.st-page .st-input {
+    width: 100%;
+    background: #EDF1F7;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    min-height: 54px;
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #18262E;
+    transition: border-color 150ms ease, background 150ms ease;
+}
+body.st-page .st-input::placeholder { color: #9AA7B2; }
+body.st-page .st-input:focus {
+    outline: none;
+    background: #fff;
+    border-color: #0B3D4A;
+    box-shadow: 0 0 0 3px rgb(245 166 35 / 0.25);
+}
+body.st-page .st-input[aria-invalid="true"] { border-color: #C93C3C; background: #fff; }
+body.st-page .st-input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px; height: 20px;
+    color: #8A98A5;
+    pointer-events: none;
+}
+body.st-page .st-input.has-icon { padding-left: 46px; }
+body.st-page .st-input.has-trailing { padding-right: 48px; }
+body.st-page .st-eye {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 8px;
+    color: #8A98A5;
+    border-radius: 8px;
+}
+body.st-page .st-eye:hover { color: #0B3D4A; }
+body.st-page .st-eye svg { width: 20px; height: 20px; display: block; }
+body.st-page select.st-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235C6B75' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 18px;
+    padding-right: 44px;
+}
+body.st-page textarea.st-input { min-height: 130px; resize: vertical; }
+body.st-page .st-field-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 13px;
+    color: #5C6B75;
+    margin-top: 8px;
+}
+body.st-page .st-field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #B3372F;
+    margin-top: 8px;
+}
+body.st-page .st-check {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 2px solid #C3CDD8;
+    accent-color: #0B3D4A;
+    flex-shrink: 0;
+    margin-top: 2px;
+    cursor: pointer;
+}
+
+/* Password strength */
+body.st-page .st-strength-track { display: flex; gap: 6px; }
+body.st-page .st-strength-bar { height: 6px; flex: 1; border-radius: 99px; background: #DCE3EE; }
+body.st-page .st-strength-bar.on-weak { background: #C93C3C; }
+body.st-page .st-strength-bar.on-fair { background: #E8930C; }
+body.st-page .st-strength-bar.on-good { background: #F5A623; }
+body.st-page .st-strength-bar.on-strong { background: #1E8E5A; }
+
+/* ------------------------------------------------------------------
+   Cards & panels
+   ------------------------------------------------------------------ */
+body.st-page .st-card {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.05);
+}
+body.st-page .st-sidepanel {
+    background: #EEF3FF;
+    border: 1px solid #E0E8FA;
+    border-radius: 20px;
+}
+body.st-page .st-darkpanel {
+    background: linear-gradient(135deg, #0A3436 0%, #0B3D4A 60%, #082E38 100%);
+    border-radius: 24px;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+}
+body.st-page .st-darkpanel::before {
+    content: "";
+    position: absolute;
+    right: -90px; bottom: -90px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 46px solid rgb(245 166 35 / 0.08);
+    pointer-events: none;
+}
+
+/* Shared-component restyle, scoped so admin keeps its own look */
+body.st-page .card {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.05);
+}
+body.st-page .price { color: #D97706; font-weight: 800; }
+body.st-page .book-card-oldprice { color: #9AA7B2; text-decoration: line-through; font-weight: 500; }
+body.st-page .off-chip {
+    display: inline-flex;
+    align-items: center;
+    background: #F5A623;
+    color: #3A2503;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 8px;
+    padding: 4px 10px;
+}
+body.st-page .badge { border-radius: 999px; font-weight: 700; }
+body.st-page .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid #E4E8F2;
+    font-size: 14px;
+    font-weight: 600;
+    color: #3D4E59;
+    white-space: nowrap;
+    transition: all 150ms ease;
+}
+body.st-page .chip:hover { border-color: #0B3D4A; color: #0B3D4A; }
+body.st-page .chip-active, body.st-page .chip.chip-active {
+    background: #0B3D4A;
+    border-color: #0B3D4A;
+    color: #fff;
+}
+body.st-page .chip-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+}
+body.st-page .toast {
+    border-radius: 14px;
+    box-shadow: 0 12px 32px rgb(16 30 40 / 0.18);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------------
+   Book cards (catalog grid)
+   ------------------------------------------------------------------ */
+body.st-page .st-book-card {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.05);
+    transition: transform 200ms ease, box-shadow 200ms ease;
+}
+body.st-page .st-book-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 34px rgb(11 61 74 / 0.14);
+}
+body.st-page .st-book-cover {
+    aspect-ratio: 3/4;
+    background: linear-gradient(150deg, #0B3D4A, #082E38);
+    position: relative;
+    overflow: hidden;
+}
+body.st-page .st-book-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+body.st-page .st-badge-free {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: #F5A623;
+    color: #3A2503;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 7px;
+    padding: 4px 9px;
+}
+body.st-page .st-badge-sale {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: #C93C3C;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 7px;
+    padding: 4px 9px;
+}
+body.st-page .st-book-body { padding: 16px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+body.st-page .st-book-cat { font-size: 10px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #D97706; }
+body.st-page .st-book-title { font-size: 16px; font-weight: 800; color: #101E28; line-height: 1.3; }
+body.st-page .st-book-title a:hover { color: #0B3D4A; }
+body.st-page .st-book-meta { font-size: 13px; color: #5C6B75; }
+body.st-page .st-book-price { display: flex; align-items: baseline; gap: 8px; margin-top: auto; padding-top: 8px; }
+body.st-page .st-book-price .now { font-size: 20px; font-weight: 800; color: #D97706; }
+body.st-page .st-book-price .was { font-size: 14px; color: #9AA7B2; text-decoration: line-through; }
+body.st-page .st-add-cart {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #0B3D4A;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 9px 14px;
+    margin-top: 10px;
+    transition: background 150ms ease;
+}
+body.st-page .st-add-cart:hover { background: #082E38; }
+
+/* ------------------------------------------------------------------
+   Library quota bars
+   ------------------------------------------------------------------ */
+body.st-page .st-quota { background: #EDF1F7; border-radius: 14px; padding: 12px 16px; }
+body.st-page .st-quota-track { height: 8px; border-radius: 99px; background: #DCE3EE; overflow: hidden; margin-top: 8px; }
+body.st-page .st-quota-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #0B3D4A, #0F5566); transition: width 300ms ease; }
+body.st-page .st-quota.low .st-quota-fill { background: linear-gradient(90deg, #C93C3C, #E0635A); }
+body.st-page .st-quota.low { background: #FDECEC; }
+body.st-page .st-timer-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #DCEBFF;
+    color: #0B3D4A;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------
+   Auth pages
+   ------------------------------------------------------------------ */
+body.st-page .st-auth-shell { max-width: 1180px; margin: 0 auto; padding: 40px 20px 64px; }
+body.st-page .st-auth-card {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 24px;
+    box-shadow: 0 8px 30px rgb(16 30 40 / 0.07);
+    padding: 40px;
+}
+@media (max-width: 640px) {
+    body.st-page .st-auth-card { padding: 28px 20px; }
+}
+body.st-page .st-auth-title { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; color: #101E28; line-height: 1.15; }
+@media (max-width: 640px) { body.st-page .st-auth-title { font-size: 28px; } }
+body.st-page .st-login-card { position: relative; }
+body.st-page .st-login-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 24px; right: 24px;
+    height: 4px;
+    border-radius: 0 0 6px 6px;
+    background: linear-gradient(90deg, #0B3D4A, #0F9D8F 55%, #F5A623);
+}
+body.st-page .st-adv-item { display: flex; gap: 14px; align-items: flex-start; }
+body.st-page .st-adv-icon {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    background: #fff;
+    border: 1px solid #E0E8FA;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #D97706;
+    flex-shrink: 0;
+}
+body.st-page .st-adv-icon svg { width: 22px; height: 22px; }
+body.st-page .st-security-box {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #EEF3FF;
+    border: 1px solid #E0E8FA;
+    border-radius: 14px;
+    padding: 14px 16px;
+    font-size: 14px;
+    color: #3D4E59;
+}
+body.st-page .st-turnstile-box {
+    background: #F1F4FA;
+    border: 1px solid #E4E8F2;
+    border-radius: 14px;
+    padding: 16px 18px;
+}
+body.st-page .st-terms-box {
+    border: 1px solid #E4E8F2;
+    border-radius: 14px;
+    padding: 14px 16px;
+    background: #FAFBFE;
+}
+
+/* ------------------------------------------------------------------
+   Account menu rows + avatar
+   ------------------------------------------------------------------ */
+body.st-page .st-menu-row { display: flex; align-items: center; justify-content: space-between; padding: 14px;
+    border-radius: 16px; background: #fff; border: 1px solid #E4E8F2; box-shadow: 0 2px 10px rgba(16,30,40,.04);
+    transition: transform .12s ease, border-color .12s ease; }
+body.st-page .st-menu-row:active { transform: scale(.99); }
+body.st-page .st-menu-row:hover { border-color: #C9D5E8; }
+body.st-page .st-avatar { width: 56px; height: 56px; border-radius: 9999px; background: #0B3D4A; color: #fff;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 20px; box-shadow: 0 4px 10px rgba(11,61,74,.3); }
+
+/* ------------------------------------------------------------------
+   Footer (cream, dark text — per approved screens)
+   ------------------------------------------------------------------ */
+body.st-page .st-footer { background: #EEF1F8; color: #3D4E59; margin-top: 56px; }
+body.st-page .st-footer h4 {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #101E28;
+    margin-bottom: 14px;
+}
+body.st-page .st-footer a.st-flink { font-size: 14px; color: #3D4E59; display: inline-block; padding: 3px 0; }
+body.st-page .st-footer a.st-flink:hover { color: #0B3D4A; text-decoration: underline; text-underline-offset: 4px; }
+body.st-page .st-footer .st-brand { font-size: 22px; font-weight: 800; color: #101E28; letter-spacing: -0.01em; }
+body.st-page .st-footer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #E4E8F2;
+    border-radius: 10px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #18262E;
+}
+body.st-page .st-footer-bottom {
+    border-top: 1px solid #DEE4F0;
+    font-size: 13px;
+    color: #5C6B75;
+}
+
+/* ------------------------------------------------------------------
+   Breadcrumbs, misc
+   ------------------------------------------------------------------ */
+body.st-page .st-crumb { font-size: 13px; color: #5C6B75; }
+body.st-page .st-crumb a { color: #3D4E59; font-weight: 600; }
+body.st-page .st-crumb a:hover { color: #0B3D4A; text-decoration: underline; }
+body.st-page .st-crumb .sep { margin: 0 8px; color: #9AA7B2; }
+
+body.st-page .st-empty {
+    text-align: center;
+    padding: 56px 24px;
+}
+body.st-page .st-stat-card {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.05);
+}
+body.st-page .st-stat-num { font-size: 34px; font-weight: 800; color: #101E28; letter-spacing: -0.02em; line-height: 1; }
+body.st-page .st-stat-label { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #5C6B75; margin-top: 6px; }
+
+body.st-page .st-hero-search {
+    display: flex;
+    gap: 10px;
+    background: #fff;
+    border: 1px solid #E4E8F2;
+    border-radius: 16px;
+    padding: 8px;
+    box-shadow: 0 8px 26px rgb(11 61 74 / 0.10);
+}
+@media (max-width: 640px) {
+    body.st-page .st-hero-search { flex-direction: column; }
+}
+body.st-page .st-hero-search .grow-field {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 0 12px;
+    min-height: 48px;
+}
+body.st-page .st-hero-search input[type="search"] {
+    border: 0; outline: 0; background: transparent;
+    width: 100%; font-size: 15px; color: #18262E;
+}
+body.st-page .st-hero-search select {
+    border: 0; outline: 0; background: transparent;
+    font-size: 14px; font-weight: 600; color: #3D4E59;
+    border-left: 1px solid #E4E8F2;
+    padding: 0 8px 0 14px;
+    min-height: 48px;
+    max-width: 170px;
+}
+body.st-page .st-trust-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 22px;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #5C6B75;
+}
+body.st-page .st-step {
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 20px;
+    padding: 28px 24px;
+    text-align: center;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.05);
+}
+body.st-page .st-step-num {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: #EEF3FF;
+    color: #0B3D4A;
+    font-weight: 800;
+    font-size: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+/* Error pages */
+body.st-page .st-error-wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 80px 20px;
+}
+body.st-page .st-error-code {
+    font-size: 96px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #0B3D4A;
+    line-height: 1;
+}
+
+/* Account menu rows */
+body.st-page .st-menu-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: #fff;
+    border: 1px solid #E6EAF3;
+    border-radius: 18px;
+    padding: 16px 18px;
+    box-shadow: 0 2px 10px rgb(16 30 40 / 0.04);
+    transition: border-color 150ms ease, transform 150ms ease;
+    width: 100%;
+    text-align: left;
+}
+body.st-page .st-menu-row:hover { border-color: #0B3D4A; }
+body.st-page .st-menu-ic {
+    width: 44px; height: 44px;
+    border-radius: 14px;
+    background: #EEF3FF;
+    color: #0B3D4A;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+body.st-page .st-menu-ic svg { width: 22px; height: 22px; }
+
+/* Invoice table */
+body.st-page .st-invoice-table { width: 100%; font-size: 14px; }
+body.st-page .st-invoice-table th { text-align: left; font-weight: 600; color: #5C6B75; padding: 10px 8px; border-bottom: 1px solid #E4E8F2; }
+body.st-page .st-invoice-table td { padding: 12px 8px; border-bottom: 1px solid #F0F3F9; }
+body.st-page .st-invoice-table tr:last-child td { border-bottom: 0; }
+
+@media print {
+    body.st-page .no-print { display: none !important; }
+}
+
+/* ------------------------------------------------------------------
+   Searchable country select (register page)
+   ------------------------------------------------------------------ */
+body.st-page .field-label {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #18262E;
+    margin-bottom: 8px;
+}
+body.st-page .field-required { color: #C93C3C; }
+body.st-page .field-input {
+    width: 100%;
+    background: #EDF1F7;
+    border: 2px solid transparent;
+    border-radius: 14px;
+    min-height: 54px;
+    padding: 12px 16px;
+    font-size: 15px;
+    color: #18262E;
+}
+body.st-page .field-input::placeholder { color: #9AA7B2; }
+body.st-page .field-input:focus {
+    outline: none;
+    background: #fff;
+    border-color: #0B3D4A;
+    box-shadow: 0 0 0 3px rgb(245 166 35 / 0.25);
+}
+body.st-page .field-hint { font-size: 13px; color: #5C6B75; margin-top: 8px; }
+body.st-page .country-list {
+    position: absolute;
+    left: 0; right: 0;
+    top: calc(100% + 6px);
+    background: #fff;
+    border: 1px solid #E4E8F2;
+    border-radius: 14px;
+    box-shadow: 0 16px 40px rgb(16 30 40 / 0.14);
+    max-height: 260px;
+    overflow-y: auto;
+    z-index: 30;
+    padding: 6px;
+}
+body.st-page .country-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    text-align: left;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #18262E;
+}
+body.st-page .country-option:hover, body.st-page .country-option.active { background: #EEF3FF; }
+body.st-page .country-option .phone { font-size: 12px; color: #8A98A5; font-weight: 500; }
+body.st-page .auth-input-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px; height: 20px;
+    color: #8A98A5;
+    pointer-events: none;
+}
+
+/* ------------------------------------------------------------------
+   Prose for CMS/legal content
+   ------------------------------------------------------------------ */
+body.st-page .st-prose { color: #3C4B58; line-height: 1.75; }
+body.st-page .st-prose h1, body.st-page .st-prose h2 { font-weight: 800; color: #101E28; letter-spacing: -0.01em; margin: 1.4em 0 .5em; }
+body.st-page .st-prose h1 { font-size: 32px; }
+body.st-page .st-prose h2 { font-size: 24px; }
+body.st-page .st-prose h3 { font-weight: 800; color: #101E28; font-size: 19px; margin: 1.2em 0 .4em; }
+body.st-page .st-prose p, body.st-page .st-prose ul, body.st-page .st-prose ol { margin: 0 0 1em; }
+body.st-page .st-prose ul { list-style: disc; padding-left: 1.4em; }
+body.st-page .st-prose ol { list-style: decimal; padding-left: 1.4em; }
+body.st-page .st-prose li { margin-bottom: .35em; }
+body.st-page .st-prose a { color: #0B3D4A; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* Empty-state icon */
+body.st-page .st-empty-icon { width: 64px; height: 64px; border-radius: 50%;
+    background: #EAF3F5; color: #0B3D4A; display: flex; align-items: center; justify-content: center; }
+
+/* Error pages (Stitch parity) */
+body.st-page .error-wrap { text-align: center; padding: 72px 16px; max-width: 560px; margin: 0 auto; }
+body.st-page .error-code { font-weight: 800; font-size: clamp(64px, 18vw, 120px); line-height: 1; color: #0B3D4A; letter-spacing: -0.02em; }

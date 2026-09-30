@@ -1,6 +1,7 @@
 @import "./tokens.css";
 @import "./ui.css";
 @import "./admin.css";
+@import "./stitch-v2.css";
 
 @tailwind base;
 @tailwind components;

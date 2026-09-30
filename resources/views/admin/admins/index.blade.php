@@ -32,7 +32,7 @@
             <div>
                 <label for="password" class="field-label">Password</label>
                 <input id="password" name="password" type="password" required minlength="12" class="input" autocomplete="new-password">
-                <p class="field-hint">Minimum 12 characters. Share it securely — it is stored hashed.</p>
+                <p class="field-hint">Minimum 12 characters and at least one symbol. Share it securely — it is stored hashed.</p>
             </div>
             <button type="submit" class="btn btn-primary w-full">Create staff account</button>
         </form>

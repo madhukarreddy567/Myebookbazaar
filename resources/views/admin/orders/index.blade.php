@@ -38,7 +38,7 @@
         <label for="status" class="field-label">Status</label>
         <select id="status" name="status" class="input">
             <option value="">All</option>
-            @foreach(['pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed', 'cancelled' => 'Cancelled'] as $v => $l)
+            @foreach(['pending' => 'Pending', 'paid' => 'Paid', 'failed' => 'Failed', 'cancelled' => 'Cancelled', 'refunded' => 'Refunded'] as $v => $l)
             <option value="{{ $v }}" @selected(($filters['status'] ?? '') === $v)>{{ $l }}</option>
             @endforeach
         </select>

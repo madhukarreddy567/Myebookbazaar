@@ -63,3 +63,16 @@ window.toast = function (message, type = 'info') {
         setTimeout(() => el.remove(), 260);
     }, 4200);
 };
+
+/* ------------------------------------------------------------------
+   Ctrl+K / Cmd+K focuses the header search (hint shown in the pill).
+   ------------------------------------------------------------------ */
+document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        const input = document.getElementById('nav-search');
+        if (input) {
+            e.preventDefault();
+            input.focus();
+        }
+    }
+});

@@ -27,7 +27,7 @@
             <label for="password" class="field-label">New password</label>
             <input id="password" name="password" type="password" required autocomplete="new-password"
                    class="input @error('password') input-error @enderror" aria-describedby="password_help password_error">
-            <p id="password_help" class="field-help">Minimum 8 characters, with upper and lower case letters and a number.</p>
+            <p id="password_help" class="field-help">Minimum 8 characters, with upper and lower case letters, a number and a symbol.</p>
             @error('password')
                 <p id="password_error" class="field-error">
                     <x-admin.icon name="alert" class="w-4 h-4 shrink-0" />{{ $message }}
