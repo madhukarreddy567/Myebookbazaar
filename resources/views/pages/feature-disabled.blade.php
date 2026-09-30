@@ -8,17 +8,17 @@
 
 @section('content')
 <div class="max-w-container mx-auto px-4 py-16">
-    <x-ui.card class="max-w-xl mx-auto p-8 text-center">
-        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--color-saffron-100)]">
-            <x-ui.icon name="info" class="w-8 h-8 text-[var(--color-warning)]" />
+    <div class="st-card max-w-xl mx-auto p-8 text-center">
+        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#FFF0D6]">
+            <x-ui.icon name="info" class="w-8 h-8 text-[#B7791F]" />
         </div>
-        <h1 class="font-display text-3xl font-bold">{{ $feature }} is currently unavailable</h1>
+        <h1 class="st-h text-[28px]">{{ $feature }} is currently unavailable</h1>
         <div class="stripe-divider mt-4 mb-6 mx-auto" aria-hidden="true"></div>
-        <p class="text-[var(--color-muted)]">We have temporarily turned this off. Please check back soon, or contact us if you need help.</p>
+        <p class="st-muted">We have temporarily turned this off. Please check back soon, or contact us if you need help.</p>
         <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-            <x-ui.button href="{{ route('home') }}" variant="primary">Back to home</x-ui.button>
-            <x-ui.button href="{{ route('books') }}" variant="secondary">Browse ebooks</x-ui.button>
+            <a href="{{ route('home') }}" class="st-btn st-btn-amber">Back to home</a>
+            <a href="{{ route('books') }}" class="st-btn st-btn-teal">Browse ebooks</a>
         </div>
-    </x-ui.card>
+    </div>
 </div>
 @endsection

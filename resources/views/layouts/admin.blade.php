@@ -6,6 +6,11 @@
 $adminUser = auth('admin')->user();
 $adminRole = $adminUser->role ?? 'super_admin';
 
+// Configurable brand logo (Settings → General). Empty string = keep the
+// original text-only brand mark exactly as designed.
+$adminLogo = trim((string) settings('site.logo', ''));
+$adminFavicon = trim((string) settings('site.favicon', ''));
+
 $navGroups = [
     'Overview' => [
         ['label' => 'Dashboard', 'icon' => 'dashboard', 'route' => 'reddy.dashboard', 'match' => 'reddy.dashboard'],
@@ -21,6 +26,8 @@ $navGroups = [
     ],
     'Sales' => [
         ['label' => 'Orders', 'icon' => 'cart', 'route' => 'reddy.orders.index', 'match' => 'reddy.orders*'],
+        ['label' => 'Reviews', 'icon' => 'list', 'route' => 'reddy.reviews.index', 'match' => 'reddy.reviews*'],
+        ['label' => 'Support', 'icon' => 'mail', 'route' => 'reddy.tickets.index', 'match' => 'reddy.tickets*'],
         ['label' => 'Users', 'icon' => 'users', 'route' => 'reddy.users.index', 'match' => 'reddy.users*'],
     ],
     'System' => [
@@ -52,6 +59,11 @@ $canSee = function ($item) use ($adminRole) {
     <meta name="robots" content="noindex, nofollow">
     <title>@yield('title', 'Admin') — MyEbookBazaar</title>
 
+    {{-- Site favicon (Settings → General → Favicon). --}}
+    @if($adminFavicon !== '')
+    <link rel="icon" href="{{ asset($adminFavicon) }}">
+    @endif
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
@@ -79,8 +91,10 @@ $canSee = function ($item) use ($adminRole) {
     <aside class="hidden lg:flex w-[260px] shrink-0 flex-col min-h-screen sticky top-0 h-screen overflow-y-auto"
            style="background-color: var(--color-sidebar-bg)">
         <div class="px-5 pt-6 pb-2">
-            <p class="font-display font-extrabold text-[22px] leading-none" style="color: var(--color-sidebar-text)">
-                MyEbook<span style="color: var(--color-saffron-500)">Bazaar</span>
+            <p class="{{ $adminLogo !== '' ? 'flex items-center gap-2.5 ' : '' }}font-display font-extrabold text-[22px] leading-none" style="color: var(--color-sidebar-text)">
+                {{-- Ternary (not @if/@endif): "@endif" directly abutting "MyEbook" would lex as one --}}
+                {{-- unknown directive "@endifMyEbook" and never compile, breaking the layout. --}}
+                {!! $adminLogo !== '' ? '<img src="'.e(asset($adminLogo)).'" alt="" class="w-9 h-9 rounded-lg object-cover shrink-0">' : '' !!}MyEbook<span style="color: var(--color-saffron-500)">Bazaar</span>
             </p>
             <p class="text-xs mt-1" style="color: var(--color-sidebar-muted)">Admin panel</p>
         </div>
@@ -125,8 +139,8 @@ $canSee = function ($item) use ($adminRole) {
                x-transition:leave="transition ease-in duration-150"
                x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full">
             <div class="px-5 py-5 flex justify-between items-center">
-                <p class="font-display font-extrabold text-xl" style="color: var(--color-sidebar-text)">
-                    MyEbook<span style="color: var(--color-saffron-500)">Bazaar</span>
+                <p class="{{ $adminLogo !== '' ? 'flex items-center gap-2 ' : '' }}font-display font-extrabold text-xl" style="color: var(--color-sidebar-text)">
+                    {!! $adminLogo !== '' ? '<img src="'.e(asset($adminLogo)).'" alt="" class="w-8 h-8 rounded-lg object-cover shrink-0">' : '' !!}MyEbook<span style="color: var(--color-saffron-500)">Bazaar</span>
                 </p>
                 <button @click="drawer = false" class="p-2 -m-2" style="color: var(--color-sidebar-muted)" aria-label="Close menu">
                     <x-admin.icon name="x" class="w-6 h-6" />
@@ -243,11 +257,11 @@ $canSee = function ($item) use ($adminRole) {
 
 {{-- Toasts --}}
 <div class="fixed bottom-4 right-4 left-4 sm:left-auto z-[110] space-y-3" aria-live="polite">
-    @foreach (['status' => 'toast-success', 'success' => 'toast-success', 'error' => 'toast-error'] as $key => $cls)
+    @foreach (['status' => 'toast-success', 'success' => 'toast-success', 'warning' => 'toast-warning', 'error' => 'toast-error'] as $key => $cls)
         @if (session($key))
             <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 4500)"
                  x-transition class="toast {{ $cls }}">
-                <x-admin.icon :name="$key === 'error' ? 'alert' : 'check'" class="w-5 h-5 shrink-0 mt-0.5" />
+                <x-admin.icon :name="in_array($key, ['error', 'warning'], true) ? 'alert' : 'check'" class="w-5 h-5 shrink-0 mt-0.5" />
                 <p class="flex-1">{{ session($key) }}</p>
                 <button @click="show = false" aria-label="Dismiss"><x-admin.icon name="x" class="w-4 h-4" /></button>
             </div>

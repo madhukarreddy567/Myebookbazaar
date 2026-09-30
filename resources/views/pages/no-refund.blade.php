@@ -4,22 +4,22 @@
 @section('meta_description', 'No-refund policy of MyEbookBazaar: all sales are final because ebooks are digital products.')
 
 @section('content')
-<div class="max-w-container mx-auto px-4 py-10">
+<div class="max-w-container mx-auto px-4 pt-6 pb-10">
     <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'No-refund policy']]" />
 
     <div class="grid md:grid-cols-[220px_1fr] gap-8 mt-6">
         <aside class="hidden md:block">
-            <nav class="sticky top-24 card p-5" aria-label="On this page">
+            <nav class="sticky top-24 st-card p-5" aria-label="On this page">
                 <p class="font-bold text-sm mb-3">On this page</p>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="#final" class="text-teal-700 hover:underline underline-offset-4">All sales are final</a></li>
-                    <li><a href="#help" class="text-teal-700 hover:underline underline-offset-4">Download problems</a></li>
+                    <li><a href="#final" class="text-[#0B3D4A] hover:underline underline-offset-4 font-semibold">All sales are final</a></li>
+                    <li><a href="#help" class="text-[#0B3D4A] hover:underline underline-offset-4 font-semibold">Download problems</a></li>
                 </ul>
             </nav>
         </aside>
 
-        <x-ui.card class="p-6 md:p-10 prose-page">
-            <h1 class="font-extrabold text-4xl md:text-5xl">No-refund policy</h1>
+        <div class="st-card p-6 md:p-10 st-prose">
+            <h1 class="st-h text-[34px] md:text-[42px]">No-refund policy</h1>
             <div class="stripe-divider mt-4 mb-6" aria-hidden="true"></div>
 
             <x-ui.alert type="warning" class="mb-6">
@@ -31,7 +31,7 @@
 
             <h2 id="help">Download problems</h2>
             <p>If your download fails for a technical reason, contact us at {{ config('app.support_email', 'support@myebookbazaar.com') }} and we will make it right.</p>
-        </x-ui.card>
+        </div>
     </div>
 </div>
 @endsection

@@ -16,7 +16,7 @@
     @php($seoCanonical = trim($__env->yieldContent('canonical') ?: url()->current()))
     @php($seoImage = trim($__env->yieldContent('og_image') ?: asset('images/stitch/logo.jpg')))
     <meta property="og:site_name" content="MyEbookBazaar">
-    <meta property="og:type" content="website">
+    <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="{{ $seoTitle }}">
     <meta property="og:description" content="{{ $seoDesc }}">
     <meta property="og:url" content="{{ $seoCanonical }}">
@@ -26,144 +26,132 @@
     <meta name="twitter:description" content="{{ $seoDesc }}">
     <meta name="twitter:image" content="{{ $seoImage }}">
     <link rel="canonical" href="{{ $seoCanonical }}">
+
+    {{-- SEO robots override: pages that must not be indexed define
+         @section('robots', 'noindex,nofollow'). --}}
+    @php($seoRobots = trim($__env->yieldContent('robots')))
+    @if($seoRobots !== '')
+    <meta name="robots" content="{{ $seoRobots }}">
+    @endif
+
+    {{-- Schema.org structured data: pages push JSON-LD with @section('jsonld'). --}}
+    @yield('jsonld')
     <meta name="theme-color" content="#0B3D4A">
 
-    {{-- Apply the saved theme before first paint (avoids a flash). --}}
-    <script>
-    (function () {
-        try {
-            var t = localStorage.getItem('meb-theme');
-            if (t !== 'dark' && t !== 'light') {
-                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            }
-            document.documentElement.dataset.theme = t;
-        } catch (e) {}
-    })();
-    </script>
+    {{-- Branding from Settings → General: favicon + logo (fall back to bundled art). --}}
+    @php($faviconPath = trim((string) settings('site.favicon', '')))
+    @if($faviconPath !== '')
+    <link rel="icon" href="{{ asset($faviconPath) }}" type="{{ match (strtolower(pathinfo($faviconPath, PATHINFO_EXTENSION))) { 'ico' => 'image/x-icon', 'svg' => 'image/svg+xml', 'gif' => 'image/gif', 'webp' => 'image/webp', default => 'image/png' } }}">
+    @endif
+    @php($logoPath = trim((string) settings('site.logo', '')))
+    @php($logoSrc = $logoPath !== '' ? asset($logoPath) : asset('images/stitch/logo.jpg'))
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700;9..40,800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 </head>
-<body class="font-body antialiased min-h-screen flex flex-col bg-canvas text-inktext">
+<body class="st-page antialiased min-h-screen flex flex-col">
 
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[200] focus:bg-saffron-500 focus:text-ink-900 focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[200] focus:bg-[#F5A623] focus:text-[#3A2503] focus:px-4 focus:py-2 focus:rounded-lg focus:font-bold">
         Skip to content
     </a>
 
     @if(settings_enabled('features.announcement_bar', true) && trim((string) settings('site.announcement_text', '')) !== '')
     <x-ui.announcement-bar id="launch">
-        @php($annLink = trim((string) settings('site.announcement_link', '')))
+        @php($annLink = safe_url(settings('site.announcement_link', '')))
         @if($annLink !== '')
-            <a href="{{ $annLink }}" class="underline decoration-current underline-offset-2 hover:opacity-80">{{ settings('site.announcement_text') }}</a>
+            <a href="{{ $annLink }}">{{ settings('site.announcement_text') }}</a>
         @else
             {{ settings('site.announcement_text') }}
         @endif
     </x-ui.announcement-bar>
     @endif
 
-    {{-- Navbar --}}
-    <header class="sticky top-0 z-40 bg-surface/95 backdrop-blur border-b border-line"
-            x-data="{ scrolled: false, drawer: false, userMenu: false, mobileSearch: false }"
-            @scroll.window="scrolled = window.scrollY > 8"
-            :class="{ 'navbar-slim': scrolled }">
-        <nav class="max-w-container mx-auto px-4 h-16 flex items-center gap-0.5 md:gap-1.5 transition-all" aria-label="Main">
+    {{-- Header — white bar per approved screens --}}
+    @php($shopper = auth()->user() instanceof \App\Models\User ? auth()->user() : null)
+    @php($cartCount = \App\Models\Cart::forVisitor($shopper, session()->getId())->count())
+    @php($visitorRegion = app(\App\Services\PriceService::class)->regionForVisitor($shopper))
+    <header class="st-header sticky top-0 z-40"
+            x-data="{ drawer: false, userMenu: false, mobileSearch: false }">
+        <nav class="max-w-container mx-auto px-4 h-[68px] flex items-center gap-5" aria-label="Main">
             {{-- Logo --}}
-            <a href="{{ route('home') }}" class="flex items-center gap-2 shrink-0 mr-1" aria-label="MyEbookBazaar home">
-                <img src="{{ asset('images/stitch/logo.jpg') }}" alt="" class="w-9 h-9 rounded-xl object-cover shadow-sm" fetchpriority="high">
-                <span class="leading-none">
-                    <span class="block font-display font-extrabold text-[18px] md:text-[22px] tracking-wide uppercase text-inktext">MyEbook<span class="text-saffron-600">Bazaar</span></span>
-                    <span class="hidden min-[420px]:block text-[9px] font-bold tracking-[0.24em] uppercase text-mutedtext mt-0.5">Digital Press</span>
-                </span>
+            <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0" aria-label="MyEbookBazaar home">
+                <img src="{{ $logoSrc }}" alt="" class="w-9 h-9 rounded-xl object-cover" fetchpriority="high">
+                <span class="st-brand text-[20px] font-extrabold tracking-tight text-[#101E28]">MyEbookBazaar</span>
             </a>
 
             {{-- Desktop links --}}
-            <div class="hidden md:flex items-center gap-6 ml-5 text-[15px] font-medium">
-                <a href="{{ route('home') }}" class="text-inktext hover:text-teal-700 {{ request()->routeIs('home') ? 'font-bold text-teal-700' : '' }}">Home</a>
-                <a href="{{ route('books') }}" class="text-inktext hover:text-teal-700 {{ request()->routeIs('books') ? 'font-bold text-teal-700' : '' }}">Books</a>
+            <div class="hidden lg:flex items-center gap-6">
+                <a href="{{ route('home') }}" class="st-navlink" @if(request()->routeIs('home')) aria-current="page" @endif>Home</a>
+                <a href="{{ route('books') }}" class="st-navlink" @if(request()->routeIs('books*')) aria-current="page" @endif>Books</a>
                 @if(Route::has('combos') && settings_enabled('features.combos', true))
-                    <a href="{{ route('combos') }}" class="text-inktext hover:text-teal-700 {{ request()->routeIs('combos*') ? 'font-bold text-teal-700' : '' }}">Combos</a>
+                    <a href="{{ route('combos') }}" class="st-navlink" @if(request()->routeIs('combos*')) aria-current="page" @endif>Combos</a>
                 @endif
                 @if(Route::has('offers') && settings_enabled('features.sales_offers', true))
-                    <a href="{{ route('offers') }}" class="text-inktext hover:text-teal-700 {{ request()->routeIs('offers') ? 'font-bold text-teal-700' : '' }}">Offers</a>
+                    <a href="{{ route('offers') }}" class="st-navlink" @if(request()->routeIs('offers')) aria-current="page" @endif>Offers</a>
                 @endif
+                <a href="{{ route('about') }}" class="st-navlink" @if(request()->routeIs('about')) aria-current="page" @endif>About</a>
             </div>
 
             <div class="flex-1"></div>
 
-            {{-- Search (desktop) --}}
-            <form method="GET" action="{{ route('books') }}" role="search" class="hidden md:block w-52">
-                <label for="nav-search" class="sr-only">Search ebooks</label>
-                <div class="relative">
+            {{-- Search pill (desktop) --}}
+            <form method="GET" action="{{ route('books') }}" role="search" class="hidden md:block" aria-label="Search ebooks">
+                <div class="st-search-pill">
+                    <x-ui.icon name="search" class="w-[18px] h-[18px] text-[#8A98A5] shrink-0" />
+                    <label for="nav-search" class="sr-only">Search titles, authors, genres</label>
                     <input id="nav-search" name="q" type="search" value="{{ request('q') }}"
-                           placeholder="Search ebooks…" autocomplete="off"
-                           class="field-input !min-h-[40px] !py-2 !pr-10 !text-sm">
-                    <button type="submit" aria-label="Search"
-                            class="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-mutedtext hover:text-inktext">
-                        <x-ui.icon name="search" class="w-5 h-5" />
-                    </button>
+                           placeholder="Search titles, authors, genres" autocomplete="off">
+                    <span class="st-kbd" aria-hidden="true">Ctrl K</span>
                 </div>
             </form>
 
-            {{-- Search toggle (mobile) --}}
-            <button type="button" @click="mobileSearch = !mobileSearch" :aria-expanded="mobileSearch"
-                    aria-label="Search ebooks" class="md:hidden p-2 text-inktext">
-                <x-ui.icon name="search" class="w-6 h-6" />
-            </button>
+            {{-- Pricing region pill (display of the visitor's real region) --}}
+            <span class="st-region-pill hidden xl:inline-flex" title="Your pricing region">
+                <span class="dot" aria-hidden="true"></span>
+                {{ $visitorRegion === 'IN' ? 'INR ₹' : 'INTL $' }}
+            </span>
 
-            {{-- Cart (badge count computed in-view). Guard: the admin guard can be
-                 the default guard (e.g. error pages rendered for staff), and
-                 Cart::forVisitor only accepts the customer User model. --}}
-            @php($shopper = auth()->user() instanceof \App\Models\User ? auth()->user() : null)
-            @php($cartCount = \App\Models\Cart::forVisitor($shopper, session()->getId())->count())
+            {{-- Cart --}}
             <a href="{{ route('cart.index') }}" aria-label="Cart{{ $cartCount > 0 ? ', '.$cartCount.' items' : '' }}"
-               class="relative p-2 md:p-2.5 text-inktext hover:text-teal-700">
+               class="relative p-2 text-[#18262E] hover:text-[#0B3D4A]">
                 <x-ui.icon name="cart" class="w-6 h-6" />
                 @if($cartCount > 0)
-                    <span class="absolute top-1 right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-saffron-500 text-ink-900 text-[11px] font-bold flex items-center justify-center leading-none">{{ $cartCount }}</span>
+                    <span class="st-cart-badge">{{ $cartCount }}</span>
                 @endif
             </a>
 
-            {{-- Theme toggle --}}
-            <button type="button" @click="window.mebTheme.toggle()" aria-label="Toggle dark mode"
-                    class="p-2 md:p-2.5 text-inktext hover:text-teal-700"
-                    x-data="{ dark: document.documentElement.dataset.theme === 'dark' }"
-                    @meb:theme.window="dark = ($event.detail === 'dark')">
-                <span x-show="!dark" x-cloak><x-ui.icon name="moon" class="w-5 h-5" /></span>
-                <span x-show="dark" x-cloak><x-ui.icon name="sun" class="w-5 h-5" /></span>
-            </button>
-
             {{-- Auth (desktop) --}}
             @guest
-                <div class="hidden md:flex items-center gap-2">
-                    <x-ui.button variant="ghost" size="sm" href="{{ route('login') }}">Login</x-ui.button>
-                    <x-ui.button variant="primary" size="sm" href="{{ route('register') }}">Sign up</x-ui.button>
+                <div class="hidden md:flex items-center gap-4">
+                    <a href="{{ route('login') }}" class="st-login-link">Login</a>
+                    <a href="{{ route('register') }}" class="st-btn-register">Register</a>
                 </div>
             @else
                 <div class="hidden md:block relative">
                     <button @click="userMenu = !userMenu" :aria-expanded="userMenu"
-                            class="flex items-center gap-2 p-1.5 pr-2.5 rounded-full hover:bg-teal-100">
-                        <span class="w-9 h-9 rounded-full bg-ink-900 text-white flex items-center justify-center font-bold text-sm" aria-hidden="true">{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
-                        <span class="text-sm font-medium max-w-[120px] truncate">{{ auth()->user()->name }}</span>
+                            class="flex items-center gap-2 p-1.5 pr-2.5 rounded-full hover:bg-[#EDF1F7]">
+                        <span class="w-9 h-9 rounded-full bg-[#0B3D4A] text-white flex items-center justify-center font-bold text-sm" aria-hidden="true">{{ strtoupper(mb_substr(auth()->user()->name, 0, 1)) }}</span>
+                        <span class="text-sm font-semibold max-w-[110px] truncate">{{ auth()->user()->name }}</span>
                         <x-ui.icon name="chevron-down" class="w-4 h-4" />
                     </button>
                     <div x-show="userMenu" @click.away="userMenu = false" x-cloak x-transition
-                         class="absolute right-0 mt-2 w-52 card !rounded-xl py-1 z-50 overflow-hidden">
-                        <a href="{{ route('account') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-teal-100">
+                         class="absolute right-0 mt-2 w-56 st-card !rounded-2xl py-1.5 z-50 overflow-hidden">
+                        <a href="{{ route('account') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-[#EDF1F7]">
                             <x-ui.icon name="user" class="w-4 h-4" /> My account
                         </a>
-                        <a href="{{ route('orders.index') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-teal-100">
+                        <a href="{{ route('orders.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-[#EDF1F7]">
                             <x-ui.icon name="file-text" class="w-4 h-4" /> My orders
                         </a>
-                        <a href="{{ route('library') }}" class="flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-teal-100">
+                        <a href="{{ route('library') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-[#EDF1F7]">
                             <x-ui.icon name="book" class="w-4 h-4" /> My library
                         </a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" class="w-full flex items-center gap-2 px-4 py-2.5 text-sm hover:bg-teal-100 text-left">
+                            <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium hover:bg-[#EDF1F7] text-left">
                                 <x-ui.icon name="logout" class="w-4 h-4" /> Logout
                             </button>
                         </form>
@@ -171,8 +159,12 @@
                 </div>
             @endguest
 
-            {{-- Mobile hamburger --}}
-            <button type="button" @click="drawer = true" aria-label="Open menu" class="md:hidden p-2 -mr-2">
+            {{-- Mobile: search toggle + hamburger --}}
+            <button type="button" @click="mobileSearch = !mobileSearch" :aria-expanded="mobileSearch"
+                    aria-label="Search ebooks" class="md:hidden p-2 text-[#18262E]">
+                <x-ui.icon name="search" class="w-6 h-6" />
+            </button>
+            <button type="button" @click="drawer = true" aria-label="Open menu" class="lg:hidden p-2 -mr-2">
                 <x-ui.icon name="menu" class="w-6 h-6" />
             </button>
         </nav>
@@ -180,53 +172,50 @@
         {{-- Mobile search panel --}}
         <div x-show="mobileSearch" x-cloak x-transition class="md:hidden px-4 pb-3">
             <form method="GET" action="{{ route('books') }}" role="search">
-                <label for="mobile-search" class="sr-only">Search ebooks</label>
-                <div class="relative">
+                <div class="st-search-pill !max-w-none">
+                    <x-ui.icon name="search" class="w-[18px] h-[18px] text-[#8A98A5] shrink-0" />
+                    <label for="mobile-search" class="sr-only">Search ebooks</label>
                     <input id="mobile-search" name="q" type="search" value="{{ request('q') }}"
-                           placeholder="Search ebooks…" autocomplete="off"
-                           class="field-input !pr-12">
-                    <button type="submit" aria-label="Search"
-                            class="absolute right-1 top-1/2 -translate-y-1/2 p-2.5 text-mutedtext hover:text-inktext">
-                        <x-ui.icon name="search" class="w-5 h-5" />
-                    </button>
+                           placeholder="Search titles, authors, genres" autocomplete="off">
                 </div>
             </form>
         </div>
 
         {{-- Mobile drawer --}}
-        <div x-show="drawer" x-cloak class="fixed inset-0 z-50 md:hidden">
+        <div x-show="drawer" x-cloak class="fixed inset-0 z-50 lg:hidden">
             <div class="absolute inset-0 bg-black/40" @click="drawer = false" aria-hidden="true"></div>
-            <div class="absolute right-0 top-0 bottom-0 w-72 bg-surface shadow-raised p-6 flex flex-col gap-2"
+            <div class="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 flex flex-col gap-1"
                  x-transition:enter="transition ease-out duration-200" x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
                  role="dialog" aria-label="Menu">
                 <div class="flex items-center justify-between mb-4">
                     <span class="flex items-center gap-2">
-                        <img src="{{ asset('images/stitch/logo.jpg') }}" alt="" class="w-8 h-8 rounded-lg object-cover">
-                        <span class="font-display font-extrabold text-xl uppercase tracking-wide text-inktext">MyEbookBazaar</span>
+                        <img src="{{ $logoSrc }}" alt="" class="w-8 h-8 rounded-lg object-cover">
+                        <span class="font-extrabold text-xl tracking-tight text-[#101E28]">MyEbookBazaar</span>
                     </span>
                     <button type="button" @click="drawer = false" aria-label="Close menu" class="p-2">
                         <x-ui.icon name="x" class="w-6 h-6" />
                     </button>
                 </div>
-                <a href="{{ route('home') }}" class="py-3 font-medium border-b border-line">Home</a>
-                <a href="{{ route('books') }}" class="py-3 font-medium border-b border-line">Books</a>
+                <a href="{{ route('home') }}" class="py-3 font-semibold border-b border-[#E4E8F2]">Home</a>
+                <a href="{{ route('books') }}" class="py-3 font-semibold border-b border-[#E4E8F2]">Books</a>
                 @if(Route::has('combos') && settings_enabled('features.combos', true))
-                    <a href="{{ route('combos') }}" class="py-3 font-medium border-b border-line">Combos</a>
+                    <a href="{{ route('combos') }}" class="py-3 font-semibold border-b border-[#E4E8F2]">Combos</a>
                 @endif
                 @if(Route::has('offers') && settings_enabled('features.sales_offers', true))
-                    <a href="{{ route('offers') }}" class="py-3 font-medium border-b border-line">Offers</a>
+                    <a href="{{ route('offers') }}" class="py-3 font-semibold border-b border-[#E4E8F2]">Offers</a>
                 @endif
-                <div class="mt-4 flex flex-col gap-2">
+                <a href="{{ route('about') }}" class="py-3 font-semibold border-b border-[#E4E8F2]">About</a>
+                <div class="mt-5 flex flex-col gap-2.5">
                     @guest
-                        <x-ui.button variant="secondary" href="{{ route('login') }}" class="w-full">Login</x-ui.button>
-                        <x-ui.button variant="primary" href="{{ route('register') }}" class="w-full">Sign up</x-ui.button>
+                        <a href="{{ route('login') }}" class="st-btn st-btn-white st-btn-sm w-full">Login</a>
+                        <a href="{{ route('register') }}" class="st-btn st-btn-teal st-btn-sm w-full">Register</a>
                     @else
-                        <x-ui.button variant="secondary" href="{{ route('account') }}" class="w-full">My account</x-ui.button>
-                        <x-ui.button variant="secondary" href="{{ route('orders.index') }}" class="w-full">My orders</x-ui.button>
-                        <x-ui.button variant="secondary" href="{{ route('library') }}" class="w-full">My library</x-ui.button>
+                        <a href="{{ route('account') }}" class="st-btn st-btn-white st-btn-sm w-full">My account</a>
+                        <a href="{{ route('orders.index') }}" class="st-btn st-btn-white st-btn-sm w-full">My orders</a>
+                        <a href="{{ route('library') }}" class="st-btn st-btn-white st-btn-sm w-full">My library</a>
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <x-ui.button variant="ghost" type="submit" class="w-full">Logout</x-ui.button>
+                            <button type="submit" class="st-btn st-btn-white st-btn-sm w-full">Logout</button>
                         </form>
                     @endguest
                 </div>
@@ -255,127 +244,112 @@
         @yield('content')
     </main>
 
-    {{-- Footer --}}
-    <footer class="mt-10 text-white" style="background: var(--color-teal-900)">
-        <div class="max-w-container mx-auto px-4 pt-10 pb-6">
-            <div class="flex flex-col gap-8 md:grid md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+    {{-- Footer — cream, dark text (approved screens) --}}
+    <footer class="st-footer">
+        <div class="max-w-container mx-auto px-4 pt-12 pb-8">
+            <div class="grid gap-10 md:grid-cols-[1.5fr_1fr_1fr_1.2fr]">
                 <div>
                     <p class="flex items-center gap-2.5">
-                        <img src="{{ asset('images/stitch/logo.jpg') }}" alt="" class="w-10 h-10 rounded-xl object-cover">
-                        <span class="leading-none">
-                            <span class="block font-display font-extrabold text-2xl uppercase tracking-wide">MyEbookBazaar</span>
-                            <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-[9px] font-bold tracking-[0.18em] uppercase" style="background: var(--color-saffron-500); color: var(--color-teal-900)">Direct PDF</span>
-                        </span>
+                        <img src="{{ $logoSrc }}" alt="" class="w-10 h-10 rounded-xl object-cover">
+                        <span class="st-brand">MyEbookBazaar</span>
                     </p>
-                    <p class="text-sm mt-4 max-w-sm leading-relaxed" style="color: #c8d9dd">
-                        Instant digital guides for real results. Short, practical ebooks on
-                        fitness, skills and money — written in plain language.
+                    <p class="text-sm mt-4 max-w-sm leading-relaxed">
+                        {{ settings('site.footer_text') ?: 'A premium literary and technical ebook marketplace engineered for frictionless browsing, instant format delivery, and curated reading journeys worldwide.' }}
                     </p>
-                    <p class="flex items-center gap-2 mt-4 text-sm font-semibold" style="color: #eaf1ff">
-                        <x-ui.icon name="shield" class="w-5 h-5" style="color: var(--color-saffron-500)" />
-                        Instant PDF download &bull; 100% secure checkout
-                    </p>
-                    @if(settings('site.instagram') || settings('site.youtube'))
-                    <div class="flex flex-col gap-2.5 mt-4">
-                        @if(settings('site.instagram'))
-                        <a href="{{ settings('site.instagram') }}" target="_blank" rel="noopener" aria-label="Instagram"
-                           class="inline-flex items-center gap-2.5 text-sm font-semibold hover:underline underline-offset-4" style="color: #eaf1ff">
-                            <span class="p-2 rounded-full" style="background: rgb(255 255 255 / 0.12)">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
-                            </span>
-                            {{ '@'.ltrim(basename(rtrim((string) parse_url(settings('site.instagram'), PHP_URL_PATH), '/')), '@') }}
+                    <div class="flex flex-wrap gap-2.5 mt-5">
+                        <span class="st-footer-badge"><x-ui.icon name="shield" class="w-4 h-4 text-[#0B3D4A]" /> Razorpay Verified</span>
+                        <span class="st-footer-badge"><x-ui.icon name="lock" class="w-4 h-4 text-[#0B3D4A]" /> Secure checkout</span>
+                    </div>
+                    @php($socialLinks = array_filter([
+                        'facebook' => safe_url(settings('site.facebook')),
+                        'instagram' => safe_url(settings('site.instagram')),
+                        'x' => safe_url(settings('site.x')),
+                        'youtube' => safe_url(settings('site.youtube')),
+                    ]))
+                    @if(count($socialLinks))
+                    <div class="flex gap-2.5 mt-4">
+                        @if(!empty($socialLinks['facebook']))
+                        <a href="{{ $socialLinks['facebook'] }}" target="_blank" rel="noopener" aria-label="Facebook" class="st-footer-badge !p-2.5">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                         </a>
                         @endif
-                        @if(settings('site.youtube'))
-                        <a href="{{ settings('site.youtube') }}" target="_blank" rel="noopener" aria-label="YouTube — HMKR FILMS"
-                           class="inline-flex items-center gap-2.5 text-sm font-semibold hover:underline underline-offset-4" style="color: #eaf1ff">
-                            <span class="p-2 rounded-full" style="background: rgb(255 255 255 / 0.12)">
-                                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.4-1C16.6 3.6 12 3.6 12 3.6s-4.6 0-7.7.3c-.5.1-1.5.1-2.4 1-.7.7-.9 2.3-.9 2.3S.8 9.1.8 11v1.8c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.6 1 1.9.2 7.5.3 7.5.3s4.6 0 7.7-.4c.5-.1 1.5-.1 2.4-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8V11c0-1.9-.2-3.8-.2-3.8zM9.8 15.1V8.4l6.2 3.4-6.2 3.3z"/></svg>
-                            </span>
-                            HMKR FILMS
+                        @if(!empty($socialLinks['instagram']))
+                        <a href="{{ $socialLinks['instagram'] }}" target="_blank" rel="noopener" aria-label="Instagram" class="st-footer-badge !p-2.5">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor"/></svg>
+                        </a>
+                        @endif
+                        @if(!empty($socialLinks['x']))
+                        <a href="{{ $socialLinks['x'] }}" target="_blank" rel="noopener" aria-label="X (Twitter)" class="st-footer-badge !p-2.5">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                        </a>
+                        @endif
+                        @if(!empty($socialLinks['youtube']))
+                        <a href="{{ $socialLinks['youtube'] }}" target="_blank" rel="noopener" aria-label="YouTube" class="st-footer-badge !p-2.5">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23 7.2s-.2-1.6-.9-2.3c-.9-.9-1.9-.9-2.4-1C16.6 3.6 12 3.6 12 3.6s-4.6 0-7.7.3c-.5.1-1.5.1-2.4 1-.7.7-.9 2.3-.9 2.3S.8 9.1.8 11v1.8c0 1.9.2 3.8.2 3.8s.2 1.6.9 2.3c.9.9 2 .9 2.6 1 1.9.2 7.5.3 7.5.3s4.6 0 7.7-.4c.5-.1 1.5-.1 2.4-1 .7-.7.9-2.3.9-2.3s.2-1.9.2-3.8V11c0-1.9-.2-3.8-.2-3.8zM9.8 15.1V8.4l6.2 3.4-6.2 3.3z"/></svg>
                         </a>
                         @endif
                     </div>
                     @endif
                 </div>
-                <nav aria-label="Shop">
-                    <p class="font-display font-bold text-lg uppercase tracking-wide mb-3">Shop</p>
-                    <ul class="space-y-2.5 text-sm" style="color: #c8d9dd">
-                        <li><a href="{{ route('books') }}" class="hover:underline underline-offset-4">All ebooks</a></li>
+                <nav aria-label="Quick links">
+                    <h4>Quick links</h4>
+                    <ul class="space-y-1">
+                        <li><a href="{{ route('home') }}" class="st-flink">Home</a></li>
+                        <li><a href="{{ route('books') }}" class="st-flink">Books Catalog</a></li>
                         @if(Route::has('combos') && settings_enabled('features.combos', true))
-                            <li><a href="{{ route('combos') }}" class="hover:underline underline-offset-4">Combos</a></li>
+                            <li><a href="{{ route('combos') }}" class="st-flink">Combo Bundles</a></li>
                         @endif
                         @if(Route::has('offers') && settings_enabled('features.sales_offers', true))
-                            <li><a href="{{ route('offers') }}" class="hover:underline underline-offset-4">Offers</a></li>
+                            <li><a href="{{ route('offers') }}" class="st-flink">Offers</a></li>
                         @endif
                     </ul>
                 </nav>
-                <nav aria-label="Company">
-                    <p class="font-display font-bold text-lg uppercase tracking-wide mb-3">Company</p>
-                    <ul class="space-y-2.5 text-sm" style="color: #c8d9dd">
-                        <li><a href="{{ route('about') }}" class="hover:underline underline-offset-4">About</a></li>
-                        <li><a href="{{ route('faq') }}" class="hover:underline underline-offset-4">FAQ</a></li>
-                        <li><a href="{{ route('contact') }}" class="hover:underline underline-offset-4">Contact</a></li>
-                        <li><a href="{{ route('privacy') }}" class="hover:underline underline-offset-4">Privacy policy</a></li>
-                        <li><a href="{{ route('no-refund') }}" class="hover:underline underline-offset-4">No-refund policy</a></li>
-                        <li><a href="{{ route('terms') }}" class="hover:underline underline-offset-4">Terms of service</a></li>
+                <nav aria-label="Support and policies">
+                    <h4>Support &amp; policies</h4>
+                    <ul class="space-y-1">
+                        <li><a href="{{ route('about') }}" class="st-flink">About Us</a></li>
+                        <li><a href="{{ route('privacy') }}" class="st-flink">Privacy Policy</a></li>
+                        <li><a href="{{ route('no-refund') }}" class="st-flink">No-Refund Policy</a></li>
+                        <li><a href="{{ route('terms') }}" class="st-flink">Terms of Service</a></li>
+                        <li><a href="{{ route('faq') }}" class="st-flink">FAQ</a></li>
                     </ul>
                 </nav>
                 <div>
-                    <p class="font-display font-bold text-lg uppercase tracking-wide mb-3">Contact</p>
-                    <p class="text-sm" style="color: #c8d9dd">
-                        Questions? Email us at<br>
-                        <a href="mailto:{{ config('app.support_email', 'support@myebookbazaar.com') }}"
-                           class="font-bold hover:underline underline-offset-4" style="color: var(--color-saffron-500)">{{ config('app.support_email', 'support@myebookbazaar.com') }}</a>
+                    <h4>Get in touch</h4>
+                    <p class="text-sm">Have questions about purchases or formats?</p>
+                    @php($supportEmail = settings('site.support_email', config('app.support_email', 'support@myebookbazaar.com')))
+                    @php($contactPhone = trim((string) settings('site.phone', '')))
+                    @php($contactAddress = trim((string) settings('site.address', '')))
+                    <p class="mt-2">
+                        <a href="mailto:{{ $supportEmail }}" class="inline-flex items-center gap-2 text-sm font-bold text-[#0B3D4A] hover:underline underline-offset-4">
+                            <x-ui.icon name="mail" class="w-4 h-4" /> {{ $supportEmail }}
+                        </a>
                     </p>
-                    <p class="flex items-center gap-1.5 mt-4 text-xs" style="color: #9db6bc">
-                        <x-ui.icon name="lock" class="w-4 h-4" /> 256-bit SSL secured
+                    @if($contactPhone !== '')
+                    <p class="mt-2">
+                        <a href="tel:{{ preg_replace('/[^+\d]/', '', $contactPhone) }}" class="text-sm font-bold text-[#0B3D4A] hover:underline underline-offset-4">{{ $contactPhone }}</a>
                     </p>
+                    @endif
+                    @if($contactAddress !== '')
+                    <p class="text-sm mt-2 leading-relaxed">{{ $contactAddress }}</p>
+                    @endif
+                    <p class="mt-4"><span class="st-footer-badge !bg-[#E9EEF7]">Notice: All sales are final</span></p>
                 </div>
             </div>
         </div>
-        <div style="border-top: 1px solid rgb(255 255 255 / 0.15)">
-            <div class="max-w-container mx-auto px-4 py-4 text-xs flex flex-wrap gap-2 justify-between" style="color: #c8d9dd">
-                <span>&copy; {{ date('Y') }} MyEbookBazaar. All rights reserved.</span>
-                <span class="flex gap-3">
+        <div class="st-footer-bottom">
+            <div class="max-w-container mx-auto px-4 py-5 flex flex-wrap gap-2 justify-between items-center">
+                <span>{{ settings('site.copyright_text') ?: '© '.date('Y').' '.settings('site.name', 'MyEbookBazaar').'. All rights reserved.' }}</span>
+                <span class="flex gap-3 items-center">
                     @if(settings_bool('security.cookie_consent_enabled', false))
                         <a href="#" class="hover:underline underline-offset-4"
                            onclick="document.cookie='meb_cookie_consent=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax'; location.reload(); return false;">Cookie settings</a>
                     @endif
-                    <span>All sales are final. Digital products.</span>
+                    <span class="inline-flex items-center gap-1.5">Crafted for digital readers</span>
                 </span>
             </div>
         </div>
     </footer>
-
-    {{-- Mobile bottom nav --}}
-    <nav class="bottom-nav md:hidden" aria-label="Mobile">
-        <div class="flex items-stretch justify-around px-2">
-            <a href="{{ route('home') }}" class="bottom-nav-link" @if(request()->routeIs('home')) aria-current="page" @endif>
-                <x-ui.icon name="home" class="w-6 h-6" />
-                <span>Home</span>
-            </a>
-            <a href="{{ route('books') }}" class="bottom-nav-link" @if(request()->routeIs('books*')) aria-current="page" @endif>
-                <x-ui.icon name="book" class="w-6 h-6" />
-                <span>Catalog</span>
-            </a>
-            <a href="{{ route('cart.index') }}" class="bottom-nav-link relative" @if(request()->routeIs('cart*')) aria-current="page" @endif>
-                <span class="relative">
-                    <x-ui.icon name="cart" class="w-6 h-6" />
-                    @if(($cartCount ?? 0) > 0)
-                        <span class="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-saffron-500 text-ink-900 text-[10px] font-bold flex items-center justify-center leading-none">{{ $cartCount }}</span>
-                    @endif
-                </span>
-                <span>Cart</span>
-            </a>
-            <a href="{{ route('library') }}" class="bottom-nav-link" @if(request()->routeIs('library')) aria-current="page" @endif>
-                <x-ui.icon name="download" class="w-6 h-6" />
-                <span>Library</span>
-            </a>
-        </div>
-    </nav>
-    {{-- Spacer so the fixed bottom nav never covers footer content --}}
-    <div class="h-[68px] md:hidden" aria-hidden="true"></div>
 
     <x-cookie-consent />
 
