@@ -245,6 +245,7 @@ class SettingsService
             'number' => is_numeric($value) && str_contains((string) $value, '.')
                 ? (float) $value
                 : (is_numeric($value) ? (int) $value : $value),
+            'percent' => is_numeric($value) ? (float) $value : $value,
             default => (string) $value,
         };
     }
@@ -254,6 +255,10 @@ class SettingsService
         // Env values are strings; boolean-ish settings get normalised.
         if (str_starts_with($key, 'features.') || str_ends_with($key, '_enabled') || str_ends_with($key, '_required')) {
             return $this->toBool($value);
+        }
+
+        if ($key === 'tax.inr_gst_rate') {
+            return is_numeric($value) ? (float) $value : $value;
         }
 
         return $value;

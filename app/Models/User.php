@@ -49,4 +49,20 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(\App\Models\Order::class);
     }
+
+    /**
+     * Rating eligibility, enforced server-side (RatingPolicy +
+     * RatingController). A customer may rate a book only when they own it
+     * through an order whose status is PAID — pending/failed/cancelled
+     * orders and refunded orders (status becomes 'refunded') never count.
+     */
+    public function ownsBook(Book $book): bool
+    {
+        return OrderItem::query()
+            ->where('book_id', $book->id)
+            ->whereHas('order', fn ($q) => $q
+                ->where('user_id', $this->id)
+                ->where('status', Order::STATUS_PAID))
+            ->exists();
+    }
 }

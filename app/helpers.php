@@ -35,3 +35,25 @@ if (! function_exists('settings_enabled')) {
         return app(SettingsService::class)->enabled($key, $default);
     }
 }
+
+if (! function_exists('safe_url')) {
+    /**
+     * URL allow-list for values rendered into href/src attributes that
+     * come from admin-editable settings (social links, announcement
+     * link). Only http/https URLs pass through — anything else
+     * (javascript:, data:, vbscript:, …) becomes '' so a stored value
+     * can never turn into a stored-XSS vector.
+     */
+    function safe_url(mixed $value): string
+    {
+        $url = trim((string) $value);
+
+        if ($url === '') {
+            return '';
+        }
+
+        $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+
+        return in_array($scheme, ['http', 'https'], true) ? $url : '';
+    }
+}

@@ -18,6 +18,32 @@ class Order extends Model
     public const STATUS_PAID = 'paid';
     public const STATUS_FAILED = 'failed';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_REFUNDED = 'refunded';
+
+    /**
+     * The ONLY legal order state transitions. Enforced by OrderService
+     * (markPaid / markFailed / markPaidManually / markRefunded) under a
+     * row lock, so illegal transitions are impossible no matter which
+     * entry point fires — checkout, webhook replay, or two admins at
+     * once:
+     *
+     * - pending   → paid | failed | cancelled
+     * - paid      → refunded            (paid → failed is impossible)
+     * - failed    → paid                (only via a re-verified payment:
+     *                                    checkout signature check, webhook
+     *                                    HMAC + amount guard, or an audited
+     *                                    manual mark-as-paid)
+     * - cancelled → (terminal)
+     * - refunded  → (terminal: refunded → paid is impossible, so a
+     *               refunded order can never regain download access)
+     */
+    public const TRANSITIONS = [
+        self::STATUS_PENDING => [self::STATUS_PAID, self::STATUS_FAILED, self::STATUS_CANCELLED],
+        self::STATUS_PAID => [self::STATUS_REFUNDED],
+        self::STATUS_FAILED => [self::STATUS_PAID],
+        self::STATUS_CANCELLED => [],
+        self::STATUS_REFUNDED => [],
+    ];
 
     protected $fillable = [
         'user_id',
@@ -26,6 +52,8 @@ class Order extends Model
         'subtotal',
         'discount_total',
         'tax_total',
+        'gst_rate',
+        'gst_amount',
         'grand_total',
         'status',
         'payment_method',
@@ -42,6 +70,8 @@ class Order extends Model
             'subtotal' => 'decimal:2',
             'discount_total' => 'decimal:2',
             'tax_total' => 'decimal:2',
+            'gst_rate' => 'decimal:2',
+            'gst_amount' => 'decimal:2',
             'grand_total' => 'decimal:2',
             'no_refund_accepted' => 'boolean',
             'no_refund_accepted_at' => 'datetime',
@@ -68,9 +98,46 @@ class Order extends Model
         return $this->hasMany(DownloadLog::class);
     }
 
+    /**
+     * First successfully served download for this order, or null when the
+     * customer has never downloaded. Used by the admin order view for
+     * refund-validity checks under the no-refund policy.
+     */
+    public function firstSuccessfulDownload(): ?DownloadLog
+    {
+        return $this->downloadLogs()
+            ->whereNotNull('downloaded_at')
+            ->orderBy('downloaded_at')
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
+     * Every logged download attempt for this order, served or blocked.
+     */
+    public function downloadAttemptsCount(): int
+    {
+        return $this->downloadLogs()->count();
+    }
+
     public function isPaid(): bool
     {
         return $this->status === self::STATUS_PAID;
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->status === self::STATUS_REFUNDED;
+    }
+
+    /**
+     * True when moving from the current status to $to is a legal
+     * transition (see TRANSITIONS). Every state-changing path in
+     * OrderService checks this under a row lock.
+     */
+    public function canTransitionTo(string $to): bool
+    {
+        return in_array($to, self::TRANSITIONS[$this->status] ?? [], true);
     }
 
     /**
@@ -100,6 +167,7 @@ class Order extends Model
             self::STATUS_PAID => 'Paid',
             self::STATUS_FAILED => 'Failed',
             self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_REFUNDED => 'Refunded',
             default => ucfirst($this->status),
         };
     }

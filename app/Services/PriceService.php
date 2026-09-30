@@ -39,7 +39,7 @@ class PriceService
     /**
      * Full price quote for a book and visitor.
      *
-     * @return array{currency: 'INR'|'USD', symbol: string, amount: float, regular_amount: float|null, on_sale: bool}
+     * @return array{currency: 'INR'|'USD', symbol: string, amount: float, regular_amount: float|null, on_sale: bool, discount_percent: int|null}
      */
     public function getPrice(Book $book, ?User $user = null, ?string $countryCode = null): array
     {
@@ -69,6 +69,7 @@ class PriceService
             'amount' => $onSale ? (float) $sale : $regular,
             'regular_amount' => $onSale ? $regular : null,
             'on_sale' => $onSale,
+            'discount_percent' => $this->discountPercent($onSale ? (float) $sale : null, $regular),
         ];
     }
 
@@ -148,7 +149,7 @@ class PriceService
      * Phase 4: full price quote for a combo and visitor. Same region
      * and currency rules as single books.
      *
-     * @return array{currency: 'INR'|'USD', symbol: string, amount: float, regular_amount: float|null, on_sale: bool}
+     * @return array{currency: 'INR'|'USD', symbol: string, amount: float, regular_amount: float|null, on_sale: bool, discount_percent: int|null}
      */
     public function getComboPrice(\App\Models\Combo $combo, ?User $user = null): array
     {
@@ -174,7 +175,22 @@ class PriceService
             'amount' => $onSale ? (float) $sale : $regular,
             'regular_amount' => $onSale ? $regular : null,
             'on_sale' => $onSale,
+            'discount_percent' => $this->discountPercent($onSale ? (float) $sale : null, $regular),
         ];
+    }
+
+    /**
+     * Whole-number discount for the "Save 34%" / "34% off" chips.
+     * Null when there is no live sale — views must never render an
+     * empty "% off" chip.
+     */
+    protected function discountPercent(?float $sale, float $regular): ?int
+    {
+        if ($sale === null || $regular <= 0 || $sale >= $regular) {
+            return null;
+        }
+
+        return (int) round((1 - $sale / $regular) * 100);
     }
 
     /**

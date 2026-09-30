@@ -6,6 +6,7 @@ use App\Http\Middleware\CheckMaintenanceMode;
 use App\Http\Middleware\EnsureEmailVerifiedIfEnabled;
 use App\Http\Middleware\EnsureSuperAdmin;
 use App\Http\Middleware\EnsureTwoFactorForSuperAdmin;
+use App\Http\Middleware\GlobalAbuseThrottle;
 use App\Http\Middleware\RequireCustomerAuth;
 use App\Http\Middleware\RequireGuestBrowsing;
 use App\Http\Middleware\SecurityHeaders;
@@ -32,6 +33,11 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Security headers on every response.
         $middleware->append(SecurityHeaders::class);
+
+        // Global per-IP abuse safety net (600 req/min; skipped in unit
+        // tests). This is NOT DDoS protection — that belongs at the
+        // Cloudflare edge (see GlobalAbuseThrottle docblock).
+        $middleware->append(GlobalAbuseThrottle::class);
 
         // Phase 6: settings-driven maintenance mode (public routes only;
         // /reddy and /webhooks/* always stay reachable).
@@ -60,6 +66,17 @@ return Application::configure(basePath: dirname(__DIR__))
             return $request->is('reddy*')
                 ? route('reddy.login')
                 : route('login');
+        });
+
+        // Authenticated admins who revisit the admin login page (e.g.
+        // /reddy/login while already signed in) go back to the admin
+        // dashboard — never to the storefront. Without this, Laravel's
+        // built-in "guest" middleware falls back to route('home') ("/"),
+        // because there is no route named "dashboard" in this app.
+        $middleware->redirectUsersTo(function ($request) {
+            return $request->is('reddy*')
+                ? route('reddy.dashboard')
+                : route('home');
         });
 
         // Razorpay calls the webhook server-to-server: no session, no CSRF

@@ -9,6 +9,7 @@ use App\Models\CouponUsage;
 use App\Models\Order;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Phase 4: the ONE place where coupon logic lives.
@@ -127,6 +128,14 @@ class CouponService
             return 'This coupon is only valid for '.($coupon->currency === 'INR' ? 'rupee (₹)' : 'US dollar ($)').' orders.';
         }
 
+        // A flat amount has a denomination: it is meaningless (and
+        // dangerous) without a currency. A flat+BOTH row must never
+        // discount anything — admin validation blocks creating new
+        // ones, this guards rows that already exist.
+        if ($coupon->type === Coupon::TYPE_FLAT && $coupon->currency === Coupon::CURRENCY_BOTH) {
+            return 'This coupon is misconfigured and cannot be used. Please contact support.';
+        }
+
         if ($coupon->max_uses !== null && $coupon->uses_count >= $coupon->max_uses) {
             return 'This coupon has reached its usage limit.';
         }
@@ -166,6 +175,12 @@ class CouponService
             }
         }
 
+        // A minimum order amount is compared numerically against the
+        // order subtotal in the ORDER's currency (the message below
+        // formats it that way too). This intentionally errs fail-safe:
+        // without an FX rate in the app a BOTH-currency minimum cannot
+        // be converted, so a small foreign-currency order may be
+        // rejected — but a discount is never granted below the minimum.
         if ($coupon->min_order_amount !== null && $subtotal < (float) $coupon->min_order_amount) {
             return 'This coupon needs a minimum order of '.
                 $this->prices->format((float) $coupon->min_order_amount, $currency).'.';
@@ -206,13 +221,19 @@ class CouponService
 
     /**
      * Discount amount for a coupon against an eligible subtotal. Never
-     * exceeds the eligible subtotal itself.
+     * exceeds the eligible subtotal itself. A flat coupon with no
+     * currency (BOTH) discounts nothing — such rows are rejected by
+     * validateCoupon; this is the last line of defence for the math.
      */
     public function discountFor(Coupon $coupon, float $subtotal): float
     {
         $subtotal = round($subtotal, 2);
 
         if ($subtotal <= 0) {
+            return 0.0;
+        }
+
+        if ($coupon->type === Coupon::TYPE_FLAT && $coupon->currency === Coupon::CURRENCY_BOTH) {
             return 0.0;
         }
 
@@ -225,16 +246,43 @@ class CouponService
 
     /**
      * Record one coupon usage. MUST be called inside the order's DB
-     * transaction: the coupon row is locked and every limit is
-     * rechecked, so a coupon that hits its limit between validation
-     * and order creation fails here instead of double-spending.
+     * transaction: the coupon row is locked and the coupon is FULLY
+     * re-validated (active flag, date window, currency, minimum order,
+     * book/category targeting, first-order rule, usage limits), so a
+     * coupon that was deactivated, expired, or exhausted between
+     * "apply" and order creation fails here instead of being honoured.
      *
+     * Pass the purchase context ($books, $subtotal, $currency, $combo)
+     * whenever it is known; without it only the context-free rules are
+     * re-checked.
+     *
+     * @param  Collection<int, \App\Models\Book>|null  $books
      * @throws CouponException when the coupon can no longer be used.
      */
-    public function consume(Order $order, Coupon $coupon, User $user): void
-    {
+    public function consume(
+        Order $order,
+        Coupon $coupon,
+        User $user,
+        ?Collection $books = null,
+        ?float $subtotal = null,
+        ?string $currency = null,
+        ?Combo $combo = null,
+    ): void {
         /** @var Coupon $locked */
         $locked = Coupon::query()->whereKey($coupon->id)->lockForUpdate()->firstOrFail();
+
+        $error = $this->validateCoupon(
+            $locked,
+            $user,
+            $books ?? collect(),
+            $subtotal ?? (float) $order->subtotal,
+            $currency ?? $order->currency,
+            $combo,
+        );
+
+        if ($error !== null) {
+            throw new CouponException($error);
+        }
 
         if ($locked->max_uses !== null && $locked->uses_count >= $locked->max_uses) {
             throw new CouponException('This coupon has just reached its usage limit. Please remove it and try again.');
@@ -258,5 +306,30 @@ class CouponService
             'order_id' => $order->id,
             'used_at' => now(),
         ]);
+    }
+
+    /**
+     * Give a coupon usage back. Used when the Razorpay order could not
+     * be created (gateway 502): the customer must not lose a limited
+     * coupon over a payment that never happened. Only the usage tied to
+     * this order is released.
+     */
+    public function release(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+            $usage = CouponUsage::query()->where('order_id', $order->id)->lockForUpdate()->first();
+
+            if (! $usage) {
+                return;
+            }
+
+            Coupon::query()
+                ->whereKey($usage->coupon_id)
+                ->where('uses_count', '>', 0)
+                ->lockForUpdate()
+                ->decrement('uses_count');
+
+            $usage->delete();
+        });
     }
 }

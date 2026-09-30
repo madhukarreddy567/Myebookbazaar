@@ -12,6 +12,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -30,6 +31,52 @@ class OrderService
         protected SettingsService $settings,
         protected CouponService $coupons,
     ) {}
+
+    /**
+     * GST breakdown for an order total (owner-decided 2026-09-30).
+     *
+     * PRICING IS GST-INCLUSIVE: the advertised price is ALWAYS the final
+     * total. For INR orders the taxable base is extracted from the
+     * inclusive total:
+     *
+     *   taxable = round(total / (1 + rate/100), 2)
+     *   gst     = round(total - taxable, 2)   // taxable + gst == total exactly
+     *
+     * USD (international) orders carry zero GST: rate 0, gst 0.
+     * The rate comes from the admin setting `tax.inr_gst_rate`
+     * (default 18) — never from the client — and is clamped 0–100.
+     *
+     * @return array{rate: float, taxable: float, gst: float}
+     */
+    public function gstBreakdown(float $inclusiveTotal, string $currency): array
+    {
+        $rate = 0.0;
+
+        if (strtoupper($currency) === 'INR') {
+            $rate = (float) $this->settings->get('tax.inr_gst_rate', 18);
+            $rate = max(0.0, min(100.0, $rate));
+        }
+
+        $taxable = $inclusiveTotal;
+        $gst = 0.0;
+
+        if ($rate > 0.0 && $inclusiveTotal > 0.0) {
+            $taxable = round($inclusiveTotal / (1 + $rate / 100), 2);
+            // Derived from the rounded taxable so taxable + gst is
+            // EXACTLY the inclusive total (no rounding drift).
+            $gst = round($inclusiveTotal - $taxable, 2);
+        }
+
+        return ['rate' => $rate, 'taxable' => $taxable, 'gst' => $gst];
+    }
+
+    /**
+     * Human-readable GST rate label, e.g. 18.0 -> "18", 18.5 -> "18.5".
+     */
+    public static function gstRateLabel(float $rate): string
+    {
+        return rtrim(rtrim(number_format($rate, 2, '.', ''), '0'), '.');
+    }
 
     /**
      * Build a pending order from the customer's cart. All money is
@@ -63,15 +110,21 @@ class OrderService
         $eligible = $coupon ? $this->coupons->eligibleSubtotal($coupon, $user, $books, $summary['total'], null) : 0.0;
         $discount = $coupon ? $this->coupons->discountFor($coupon, $eligible) : 0.0;
         $grand = round($summary['total'] - $discount, 2);
+        // GST (owner-decided 2026-09-30): INCLUSIVE extraction — the
+        // advertised price stays the final total; GST is never added on
+        // top. Computed AFTER the discount, from the discounted total.
+        $gst = $this->gstBreakdown($grand, $summary['currency']);
 
-        return DB::transaction(function () use ($user, $rows, $summary, $discount, $grand, $coupon, $paymentMethod, $ipAddress, $userAgent) {
+        return $this->createInTransaction(function () use ($user, $rows, $books, $summary, $discount, $grand, $gst, $coupon, $paymentMethod, $ipAddress, $userAgent) {
             $order = Order::create([
                 'user_id' => $user->id,
                 'order_number' => Order::generateNumber(),
                 'currency' => $summary['currency'],
                 'subtotal' => $summary['total'],
                 'discount_total' => $discount,
-                'tax_total' => 0,
+                'tax_total' => $gst['gst'],
+                'gst_rate' => $gst['rate'],
+                'gst_amount' => $gst['gst'],
                 'grand_total' => $grand,
                 'status' => Order::STATUS_PENDING,
                 'payment_method' => $paymentMethod,
@@ -95,7 +148,7 @@ class OrderService
             }
 
             if ($coupon) {
-                $this->coupons->consume($order, $coupon, $user);
+                $this->coupons->consume($order, $coupon, $user, $books, (float) $summary['total'], $summary['currency'], null);
             }
 
             return $order;
@@ -136,15 +189,21 @@ class OrderService
         $eligible = $coupon ? $this->coupons->eligibleSubtotal($coupon, $user, $books, $subtotal, $combo) : 0.0;
         $discount = $coupon ? $this->coupons->discountFor($coupon, $eligible) : 0.0;
         $grand = round($subtotal - $discount, 2);
+        // GST (owner-decided 2026-09-30): mirror createFromCart —
+        // INCLUSIVE extraction from the discounted total; grand_total
+        // is unchanged.
+        $gst = $this->gstBreakdown($grand, $quote['currency']);
 
-        return DB::transaction(function () use ($user, $combo, $books, $quote, $subtotal, $discount, $grand, $coupon, $paymentMethod, $ipAddress, $userAgent) {
+        return $this->createInTransaction(function () use ($user, $combo, $books, $quote, $subtotal, $discount, $grand, $gst, $coupon, $paymentMethod, $ipAddress, $userAgent) {
             $order = Order::create([
                 'user_id' => $user->id,
                 'order_number' => Order::generateNumber(),
                 'currency' => $quote['currency'],
                 'subtotal' => $subtotal,
                 'discount_total' => $discount,
-                'tax_total' => 0,
+                'tax_total' => $gst['gst'],
+                'gst_rate' => $gst['rate'],
+                'gst_amount' => $gst['gst'],
                 'grand_total' => $grand,
                 'status' => Order::STATUS_PENDING,
                 'payment_method' => $paymentMethod,
@@ -178,7 +237,7 @@ class OrderService
             }
 
             if ($coupon) {
-                $this->coupons->consume($order, $coupon, $user);
+                $this->coupons->consume($order, $coupon, $user, $books, $subtotal, $quote['currency'], $combo);
             }
 
             \App\Support\Audit::record(
@@ -194,8 +253,35 @@ class OrderService
     }
 
     /**
+     * Run an order-creation transaction, retrying on the rare duplicate
+     * order_number race: Order::generateNumber() checks existence
+     * without a lock, so two concurrent checkouts can pick the same
+     * number. The retry is safe because the only unique violation
+     * possible at that point comes from Order::create(), which always
+     * runs before any coupon usage is consumed — a rolled-back attempt
+     * never burns a coupon.
+     */
+    protected function createInTransaction(callable $callback): mixed
+    {
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return DB::transaction($callback);
+            } catch (QueryException $e) {
+                $duplicateNumber = str_contains($e->getMessage(), 'order_number');
+
+                if ($attempt >= 3 || ! $duplicateNumber) {
+                    throw $e;
+                }
+            }
+        }
+    }
+
+    /**
      * Mark an order paid. Idempotent: already-paid orders are returned
-     * unchanged (webhook replays and double clicks are harmless).
+     * unchanged (webhook replays and double clicks are harmless), and
+     * orders that cannot legally become paid (cancelled, refunded) are
+     * refused — the transition map on Order is the single source of
+     * truth, checked here under a row lock.
      */
     public function markPaid(Order $order, ?Payment $payment = null, string $source = 'checkout'): Order
     {
@@ -203,7 +289,7 @@ class OrderService
             /** @var Order $locked */
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->isPaid()) {
+            if (! $locked->canTransitionTo(Order::STATUS_PAID)) {
                 return $locked;
             }
 
@@ -216,8 +302,8 @@ class OrderService
             // The ebooks are bought — the cart is done.
             Cart::forVisitor($locked->user, session()->getId())->delete();
 
-            $this->sendMail($locked->user->email, new OrderConfirmationMail($locked), "order confirmation to {$locked->user->email}");
-            $this->sendMail($locked->user->email, new DownloadReadyMail($locked), "download-ready email to {$locked->user->email}");
+            $this->sendMail($locked->user->email, new OrderConfirmationMail($locked), 'order confirmation');
+            $this->sendMail($locked->user->email, new DownloadReadyMail($locked), 'download-ready email');
 
             \App\Support\Audit::record(
                 'order.paid',
@@ -232,7 +318,9 @@ class OrderService
     }
 
     /**
-     * Mark an order failed. Idempotent: already-final orders are untouched.
+     * Mark an order failed. Idempotent: orders that cannot legally
+     * become failed (already paid / failed / cancelled / refunded) are
+     * untouched — paid → failed is impossible by construction.
      */
     public function markFailed(Order $order, ?Payment $payment, string $reason): Order
     {
@@ -240,7 +328,7 @@ class OrderService
             /** @var Order $locked */
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($locked->status, [Order::STATUS_PAID, Order::STATUS_FAILED, Order::STATUS_CANCELLED], true)) {
+            if (! $locked->canTransitionTo(Order::STATUS_FAILED)) {
                 return $locked;
             }
 
@@ -253,7 +341,7 @@ class OrderService
                 ]);
             }
 
-            $this->sendMail($locked->user->email, new PaymentFailedMail($locked, $reason), "payment-failed email to {$locked->user->email}");
+            $this->sendMail($locked->user->email, new PaymentFailedMail($locked, $reason), 'payment-failed email');
 
             \App\Support\Audit::record(
                 'order.failed',
@@ -268,7 +356,11 @@ class OrderService
     }
 
     /**
-     * Admin "Mark as paid" with a required note. Audited.
+     * Admin "Mark as paid" with a required note. Audited. Only orders
+     * that can legally become paid (pending, or failed with fresh proof
+     * of payment) are transitioned — cancelled and refunded orders are
+     * refused even by admins. Two admins racing on the same order is
+     * safe: the row lock serialises them and the loser no-ops.
      */
     public function markPaidManually(Order $order, int $adminId, string $note): Order
     {
@@ -276,7 +368,7 @@ class OrderService
             /** @var Order $locked */
             $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->isPaid()) {
+            if (! $locked->canTransitionTo(Order::STATUS_PAID)) {
                 return $locked;
             }
 
@@ -301,8 +393,46 @@ class OrderService
                 $adminId,
             );
 
-            $this->sendMail($locked->user->email, new OrderConfirmationMail($locked), "order confirmation to {$locked->user->email}");
-            $this->sendMail($locked->user->email, new DownloadReadyMail($locked), "download-ready email to {$locked->user->email}");
+            $this->sendMail($locked->user->email, new OrderConfirmationMail($locked), 'order confirmation (manual mark-as-paid)');
+            $this->sendMail($locked->user->email, new DownloadReadyMail($locked), 'download-ready email (manual mark-as-paid)');
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Refund an order (money returned to the customer, e.g. via the
+     * Razorpay dashboard). ONLY a paid order can become refunded, and a
+     * refunded order is terminal — it can never transition back to
+     * paid, so download access revoked by the refund stays revoked.
+     * Download/library/thank-you gates all key off isPaid(), so a
+     * refunded order automatically loses download access. Audited.
+     *
+     * The consumed coupon stays consumed: the customer held a valid
+     * discount at purchase time, and the no-refund policy makes refunds
+     * exceptional — releasing it would let a refund recycle a
+     * single-use coupon.
+     */
+    public function markRefunded(Order $order, int $adminId, string $note): Order
+    {
+        return DB::transaction(function () use ($order, $adminId, $note) {
+            /** @var Order $locked */
+            $locked = Order::whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if (! $locked->canTransitionTo(Order::STATUS_REFUNDED)) {
+                return $locked;
+            }
+
+            $locked->update(['status' => Order::STATUS_REFUNDED]);
+
+            \App\Support\Audit::record(
+                'order.refunded',
+                'orders',
+                $locked->id,
+                ['status' => $order->status],
+                ['status' => Order::STATUS_REFUNDED, 'note' => mb_substr($note, 0, 500)],
+                $adminId,
+            );
 
             return $locked;
         });
