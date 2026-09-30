@@ -27,9 +27,13 @@ WORKDIR /app
 COPY . /app
 
 # Install PHP dependencies (no dev packages in production)
+# The admin panel's self-updater runs as the www-data web user and must be
+# able to replace code files (public/build assets, views, app code, ...).
+# Hand the whole tree to www-data at build time; entrypoint re-asserts the
+# writable dirs at every container start.
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-progress \
     && php artisan view:cache \
-    && chown -R www-data:www-data /app/storage /app/bootstrap/cache
+    && chown -R www-data:www-data /app
 
 # Apache serves Laravel's public directory; allow .htaccess overrides
 ENV APACHE_DOCUMENT_ROOT=/app/public
