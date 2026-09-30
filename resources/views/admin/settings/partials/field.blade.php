@@ -68,7 +68,7 @@ $hasError = $errors->has($oldKey) || $errors->has($errKey);
                         </label>
                     </div>
                 @endif
-                <input type="file" id="fld-{{ $flat }}" name="img_{{ $flat }}" accept="image/*" class="input !py-2.5">
+                <input type="file" id="fld-{{ $flat }}" name="img_{{ $flat }}" accept="{{ $field['accept'] ?? 'image/*' }}" class="input !py-2.5">
                 @error('img_'.$flat)<p class="field-error"><x-admin.icon name="alert" class="w-4 h-4" />{{ $message }}</p>@enderror
             </div>
         @elseif($field['type'] === 'select')
@@ -83,13 +83,17 @@ $hasError = $errors->has($oldKey) || $errors->has($errKey);
         @elseif($field['type'] === 'number')
             <input type="number" id="fld-{{ $flat }}" name="{{ $inputName }}" min="0"
                    value="{{ old($oldKey, $fv['value']) }}" class="input max-w-xs {{ $hasError ? 'input-error' : '' }}">
+        @elseif($field['type'] === 'percent')
+            <input type="number" id="fld-{{ $flat }}" name="{{ $inputName }}" min="0" max="100" step="0.01"
+                   value="{{ old($oldKey, $fv['value']) }}" class="input max-w-xs {{ $hasError ? 'input-error' : '' }}" aria-describedby="fld-{{ $flat }}-pct">
+            <span id="fld-{{ $flat }}-pct" class="text-sm text-[var(--color-muted)] ml-1.5">%</span>
         @else
             <input type="{{ $field['type'] === 'email' ? 'email' : ($field['type'] === 'url' ? 'url' : 'text') }}" id="fld-{{ $flat }}" name="{{ $inputName }}"
                    value="{{ old($oldKey, $fv['value']) }}" class="input max-w-xl {{ $hasError ? 'input-error' : '' }}"
                    @if($field['type'] === 'url') placeholder="https://…" @endif>
         @endif
 
-        @if(!empty($field['help']) && $field['type'] !== 'secret')
+        @if(!empty($field['help']) && ($field['type'] !== 'secret' || !empty($field['show_help'])))
             <p class="mt-1.5 text-xs text-[var(--color-muted)]">{{ $field['help'] }}</p>
         @endif
         @if($hasError)
