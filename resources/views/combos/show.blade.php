@@ -74,7 +74,7 @@
             <h2 class="st-h text-[24px] mb-4">What you get ({{ $combo->combo_books->count() }})</h2>
             <div class="grid gap-4 sm:grid-cols-2">
                 @foreach($combo->combo_books as $book)
-                @php($bookCover = $book->coverUrl() ?: (str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null))
+                @php($bookCover = $book->displayCoverUrl())
                 <article class="st-book-card">
                     <a href="{{ route('books.show', $book->slug) }}" class="st-book-cover block" tabindex="-1" aria-hidden="true">
                         @if($bookCover)

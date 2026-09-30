@@ -104,10 +104,8 @@ $gstRateLabel = \App\Services\OrderService::gstRateLabel((float) $order->gst_rat
                     @foreach($order->items as $item)
                     <div class="flex items-center gap-3.5 rounded-xl border border-line p-3.5">
                         <span class="w-16 shrink-0">
-                            @if($item->book && $item->book->coverUrl())
-                                <img src="{{ $item->book->coverUrl() }}" alt="" class="rounded-lg w-full h-auto shadow" loading="lazy">
-                            @elseif($item->book && str_contains($item->book->slug, 'fit-at-home'))
-                                <img src="{{ asset('images/stitch/book-mockup-3d.jpg') }}" alt="" class="rounded-lg w-full h-auto shadow" loading="lazy">
+                            @if($item->book && $item->book->displayCoverUrl())
+                                <img src="{{ $item->book->displayCoverUrl() }}" alt="" class="rounded-lg w-full h-auto shadow" loading="lazy">
                             @else
                                 <span class="book-cover-placeholder aspect-[3/4] rounded-lg !p-2" role="img" aria-label="Cover coming soon"><span class="!text-xs">{{ $item->title }}</span></span>
                             @endif

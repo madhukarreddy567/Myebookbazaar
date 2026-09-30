@@ -62,7 +62,7 @@
                         <label class="st-label" for="password">Password</label>
                         <div class="st-input-wrap">
                             <x-ui.icon name="lock" class="st-input-icon" />
-                            <input id="password" name="password" :type="show ? 'text' : 'password'"
+                            <input id="password" name="password" type="password" x-bind:type="show ? 'text' : 'password'"
                                    class="st-input has-icon has-trailing" placeholder="••••••••••••"
                                    required autocomplete="new-password"
                                    @input="update($event.target.value)"

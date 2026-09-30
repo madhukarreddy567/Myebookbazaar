@@ -29,7 +29,7 @@
             {{-- Items --}}
             <div class="flex flex-col gap-3">
                 @foreach($items as $row)
-                @php($rowCover = $row->book->coverUrl() ?: (str_contains($row->book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null))
+                @php($rowCover = $row->book->displayCoverUrl())
                 <div class="st-card p-4 flex gap-4 items-center">
                     <a href="{{ route('books.show', $row->book->slug) }}" class="w-16 shrink-0" tabindex="-1" aria-hidden="true">
                         @if($rowCover)
@@ -88,7 +88,7 @@
                             <form method="POST" action="{{ route('checkout.coupon.apply') }}" class="flex gap-2">
                                 @csrf
                                 <x-ui.input name="code" placeholder="Coupon code" :value="old('code')" :error="$errors->first('coupon')" class="flex-1" aria-label="Coupon code" />
-                                <button type="submit" class="st-btn st-btn-teal !min-h-[48px] !px-5">Apply</button>
+                                <x-ui.button type="submit" variant="secondary">Apply</x-ui.button>
                             </form>
                             @if($errors->has('coupon'))
                                 <p class="st-field-error mt-1" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('coupon') }}</span></p>

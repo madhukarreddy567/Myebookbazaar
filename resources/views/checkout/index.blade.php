@@ -38,10 +38,8 @@
                     @foreach($items as $row)
                     <div class="flex gap-3.5 items-start">
                         <span class="relative w-20 shrink-0">
-                            @if($row->book->coverUrl())
-                                <img src="{{ $row->book->coverUrl() }}" alt="" class="rounded-lg w-full h-auto shadow-md" loading="lazy">
-                            @elseif(str_contains($row->book->slug, 'fit-at-home'))
-                                <img src="{{ asset('images/stitch/book-mockup-3d.jpg') }}" alt="" class="rounded-lg w-full h-auto shadow-md" loading="lazy">
+                            @if($row->book->displayCoverUrl())
+                                <img src="{{ $row->book->displayCoverUrl() }}" alt="" class="rounded-lg w-full h-auto shadow-md" loading="lazy">
                             @else
                                 <span class="book-cover-placeholder aspect-[3/4] rounded-lg !p-2" role="img" aria-label="Cover coming soon"><span class="!text-sm">{{ $row->book->title }}</span></span>
                             @endif
@@ -53,7 +51,7 @@
                             <span class="inline-flex items-center gap-1 rounded bg-teal-100 text-teal-900 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 mb-1">
                                 <span class="w-1.5 h-1.5 rounded-full bg-saffron-500" aria-hidden="true"></span> Instant access guide
                             </span>
-                            <span class="display-sm text-teal-900 uppercase leading-tight block line-clamp-2">{{ $row->book->title }}</span>
+                            <span class="display-sm text-teal-900 leading-tight block line-clamp-2">{{ $row->book->title }}</span>
                             <span class="text-sm text-mutedtext block mt-0.5">Digital PDF ebook{{ $row->book->author ? ' · by '.$row->book->author : '' }}</span>
                             <span class="price font-display text-2xl font-extrabold text-saffron-600 block mt-1">
                                 {{ $row->price_display }}
@@ -223,17 +221,17 @@
     <div class="mt-6 grid grid-cols-3 gap-2 text-center">
         <div class="flex flex-col items-center gap-1 rounded-xl bg-tint-teal p-3">
             <img src="{{ asset('images/stitch/icon-instant-access.png') }}" alt="" class="w-9 h-9" loading="lazy">
-            <span class="text-[10px] font-bold uppercase tracking-wider">Instant download</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">Instant download</span>
             <span class="text-[10px] text-mutedtext leading-tight">Ready in seconds</span>
         </div>
         <div class="flex flex-col items-center gap-1 rounded-xl bg-tint-teal p-3">
             <img src="{{ asset('images/stitch/icon-secure-checkout.png') }}" alt="" class="w-9 h-9" loading="lazy">
-            <span class="text-[10px] font-bold uppercase tracking-wider">Safe &amp; secure</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">Safe &amp; secure</span>
             <span class="text-[10px] text-mutedtext leading-tight">Razorpay protected</span>
         </div>
         <div class="flex flex-col items-center gap-1 rounded-xl bg-tint-teal p-3">
             <img src="{{ asset('images/stitch/icon-shield.png') }}" alt="" class="w-9 h-9" loading="lazy">
-            <span class="text-[10px] font-bold uppercase tracking-wider">Lifetime copy</span>
+            <span class="text-[10px] font-bold uppercase tracking-wide whitespace-nowrap">Lifetime copy</span>
             <span class="text-[10px] text-mutedtext leading-tight">Stored in your email</span>
         </div>
     </div>

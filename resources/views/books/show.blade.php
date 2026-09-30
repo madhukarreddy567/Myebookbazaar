@@ -5,10 +5,9 @@
 @section('og_type', 'book')
 
 @php
-    // Real uploaded cover wins; the Fit at Home book falls back to the
-    // Stitch 3D mockup; anything else keeps the CSS placeholder.
-    $coverSrc = $book->coverUrl()
-        ?: (str_contains($book->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null);
+    // displayCoverUrl(): uploaded cover wins, Fit at Home falls back to
+    // the Stitch 3D mockup, anything else keeps the CSS placeholder.
+    $coverSrc = $book->displayCoverUrl();
     $onSale = $book->price_quote['on_sale'] ?? false;
     $discountPct = $book->price_quote['discount_percent'] ?? null;
 @endphp
@@ -260,7 +259,7 @@
                             :old-price="$rel->price_regular_display"
                             :on-sale="$rel->price_quote['on_sale']"
                             :sale-ends-at="$rel->sale_ends_at?->toIso8601String()"
-                            :cover="$rel->coverUrl()"
+                            :cover="$rel->displayCoverUrl()"
                             :rating-average="$rel->rating_average ?? null"
                             :rating-count="$rel->ratings_count ?? 0"
                             action-url="{{ route('books.show', $rel->slug) }}"
