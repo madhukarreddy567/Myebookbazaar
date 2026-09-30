@@ -597,6 +597,12 @@ class SecurityPhase6Test extends TestCase
         // Visitor already chose: banner gone.
         $this->withCookie('meb_cookie_consent', 'declined')
             ->get('/')->assertDontSee('cookie-consent-banner', false);
+
+        // Real browsers set this cookie via plain document.cookie (NOT
+        // encrypted). Laravel must not try to decrypt it, or the banner
+        // re-appears on every page load.
+        $this->withUnencryptedCookie('meb_cookie_consent', 'accepted')
+            ->get('/')->assertDontSee('cookie-consent-banner', false);
     }
 
     // ------------------------------------------------------------------
