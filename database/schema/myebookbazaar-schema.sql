@@ -128,6 +128,7 @@ CREATE TABLE `books` (
   `sale_ends_at` datetime DEFAULT NULL,
   `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `file_size` bigint unsigned DEFAULT NULL,
+  `original_filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `isbn` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `published_at` date DEFAULT NULL,
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
@@ -288,7 +289,8 @@ CREATE TABLE `download_logs` (
   `book_id` bigint unsigned NOT NULL,
   `order_id` bigint unsigned NOT NULL,
   `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `downloaded_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `user_agent` varchar(1024) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `downloaded_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `download_logs_user_id_foreign` (`user_id`),
   KEY `download_logs_book_id_foreign` (`book_id`),
@@ -558,7 +560,7 @@ CREATE TABLE `users` (
 
 LOCK TABLES `migrations` WRITE;
 /*!40000 ALTER TABLE `migrations` DISABLE KEYS */;
-INSERT INTO `migrations` VALUES (1,'0001_01_01_000001_create_cache_table',1),(2,'0001_01_01_000002_create_jobs_table',1),(3,'2026_09_29_000010_create_countries_table',1),(4,'2026_09_29_000011_create_admins_table',1),(5,'2026_09_29_000012_create_users_table',1),(6,'2026_09_29_000020_add_role_to_admins_table',1),(7,'2026_09_29_000030_create_settings_table',1),(8,'2026_09_29_000031_create_audit_logs_table',1),(9,'2026_09_29_000040_create_categories_table',1),(10,'2026_09_29_000041_create_books_table',1),(11,'2026_09_29_000042_create_banners_table',1),(12,'2026_09_29_000043_create_carts_table',1),(13,'2026_09_29_000044_create_pages_table',1),(14,'2026_09_29_000050_create_orders_table',1),(15,'2026_09_29_000051_create_order_items_table',1),(16,'2026_09_29_000052_create_payments_table',1),(17,'2026_09_29_000053_create_download_logs_table',1),(18,'2026_09_29_000060_add_is_active_to_admins_table',1),(19,'2026_09_29_000060_create_coupons_table',1),(20,'2026_09_29_000061_create_coupon_usages_table',1),(21,'2026_09_29_000062_create_combos_table',1),(22,'2026_09_29_000070_add_two_factor_to_admins_table',1),(23,'2026_09_29_000071_create_security_logs_table',1),(24,'2026_09_29_000100_add_category_targeting_to_coupons_table',1),(25,'2026_09_29_120000_create_backups_table',1),(26,'2026_09_29_130000_add_google_id_to_users_table',1),(27,'2026_09_29_130001_make_user_country_nullable',1);
+INSERT INTO `migrations` VALUES (1,'0001_01_01_000001_create_cache_table',1),(2,'0001_01_01_000002_create_jobs_table',1),(3,'2026_09_29_000010_create_countries_table',1),(4,'2026_09_29_000011_create_admins_table',1),(5,'2026_09_29_000012_create_users_table',1),(6,'2026_09_29_000020_add_role_to_admins_table',1),(7,'2026_09_29_000030_create_settings_table',1),(8,'2026_09_29_000031_create_audit_logs_table',1),(9,'2026_09_29_000040_create_categories_table',1),(10,'2026_09_29_000041_create_books_table',1),(11,'2026_09_29_000042_create_banners_table',1),(12,'2026_09_29_000043_create_carts_table',1),(13,'2026_09_29_000044_create_pages_table',1),(14,'2026_09_29_000050_create_orders_table',1),(15,'2026_09_29_000051_create_order_items_table',1),(16,'2026_09_29_000052_create_payments_table',1),(17,'2026_09_29_000053_create_download_logs_table',1),(18,'2026_09_29_000060_add_is_active_to_admins_table',1),(19,'2026_09_29_000060_create_coupons_table',1),(20,'2026_09_29_000061_create_coupon_usages_table',1),(21,'2026_09_29_000062_create_combos_table',1),(22,'2026_09_29_000070_add_two_factor_to_admins_table',1),(23,'2026_09_29_000071_create_security_logs_table',1),(24,'2026_09_29_000100_add_category_targeting_to_coupons_table',1),(25,'2026_09_29_120000_create_backups_table',1),(26,'2026_09_29_130000_add_google_id_to_users_table',1),(27,'2026_09_29_130001_make_user_country_nullable',1),(28,'2026_09_29_130002_add_tracking_to_download_logs_table',1),(29,'2026_09_29_130003_add_original_filename_to_books_table',1);
 /*!40000 ALTER TABLE `migrations` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;

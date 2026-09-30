@@ -21,6 +21,7 @@ class SettingsSeeder extends Seeder
         ['site.tagline', 'general', 'text', false, 'Simple ebooks for fitness, skills and money.'],
         ['site.logo', 'general', 'image', false, null],
         ['site.favicon', 'general', 'image', false, null],
+        ['site.remove_bg_api_key', 'general', 'secret', true, null],
         ['site.support_email', 'general', 'text', false, 'support@myebookbazaar.com'],
         ['site.phone', 'general', 'text', false, null],
         ['site.address', 'general', 'textarea', false, null],
@@ -30,6 +31,7 @@ class SettingsSeeder extends Seeder
         ['site.facebook', 'general', 'text', false, null],
         ['site.telegram', 'general', 'text', false, null],
         ['site.footer_text', 'general', 'textarea', false, null],
+        ['site.copyright_text', 'general', 'text', false, null],
         ['site.announcement_text', 'general', 'textarea', false, 'Our first ebook is on the way. Create a free account to get launch updates.'],
 
         // ---- 2. Feature switches ----
@@ -65,6 +67,8 @@ class SettingsSeeder extends Seeder
         ['payments.razorpay_webhook_secret', 'payments', 'secret', true, null],
         ['payments.inr_enabled', 'payments', 'boolean', false, '1'],
         ['payments.usd_enabled', 'payments', 'boolean', false, '1'],
+        // GST (inclusive) for Indian digital ebook sales. New orders only.
+        ['tax.inr_gst_rate', 'payments', 'percent', false, '18'],
 
         // ---- 5. Email ----
         ['mail.host', 'mail', 'text', false, null],

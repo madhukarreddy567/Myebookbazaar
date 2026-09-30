@@ -14,7 +14,7 @@ cd /app
 
 # Ensure writable dirs exist (fresh container)
 mkdir -p storage/framework/cache storage/framework/sessions storage/framework/views \
-         storage/app/public storage/logs bootstrap/cache
+         storage/app/private storage/app/public storage/logs bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 
 # Cache config/routes now that production env vars are present

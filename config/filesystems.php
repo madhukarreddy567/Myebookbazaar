@@ -32,7 +32,12 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            // Env-overridable so production can point this at a persistent
+            // Railway Volume. The container disk is EPHEMERAL: without a
+            // volume, every redeploy wipes uploaded PDFs while books.file_path
+            // stays in MySQL, and every download then fails with
+            // "file is not available yet".
+            'root' => env('PRIVATE_STORAGE_PATH', storage_path('app/private')),
             // NEVER serve the private disk over HTTP: ebook PDFs are only
             // delivered through signed, expiring download links (Phase 3).
             'serve' => false,
@@ -42,7 +47,9 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            // Same persistence note as the private disk: point at the
+            // Railway Volume in production so covers survive redeploys.
+            'root' => env('PUBLIC_STORAGE_PATH', storage_path('app/public')),
             'url' => env('APP_URL').'/storage',
             'visibility' => 'public',
             'throw' => false,

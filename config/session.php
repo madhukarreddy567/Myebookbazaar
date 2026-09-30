@@ -169,7 +169,10 @@ return [
     |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    // Secure cookies default to ON whenever APP_URL is https (production
+    // on Railway) and OFF for plain-http local dev. SESSION_SECURE_COOKIE
+    // explicitly set to true/false always wins over this auto-detection.
+    'secure' => env('SESSION_SECURE_COOKIE', str_starts_with((string) env('APP_URL', 'http://localhost'), 'https://')),
 
     /*
     |--------------------------------------------------------------------------
