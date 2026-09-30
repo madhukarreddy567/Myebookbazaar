@@ -50,7 +50,7 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function shareFeatureFlags(): void
     {
-        View::composer('layouts.app', function ($view) {
+        View::composer(['layouts.app', 'layouts.stitch'], function ($view) {
             $view->with('featuresRegistrationEnabled', settings_enabled('features.registration'));
             $view->with('featuresLoginEnabled', settings_enabled('features.login'));
         });

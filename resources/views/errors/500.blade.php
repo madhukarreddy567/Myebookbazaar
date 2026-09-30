@@ -1,15 +1,13 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('title', 'Something went wrong — MyEbookBazaar')
 
 @section('content')
-<div class="error-wrap">
-    <div class="stripe-divider mx-auto mb-6" aria-hidden="true"></div>
-    <p class="error-code">500</p>
-    <h1 class="text-4xl font-extrabold mt-4">Something went wrong</h1>
-    <p class="text-mutedtext mt-3">Our team has been notified. Please try again in a little while.</p>
-    <div class="mt-8">
-        <a href="{{ route('home') }}" class="st-btn st-btn-amber">Go to homepage</a>
-    </div>
-</div>
+@component('errors.partials.shell', [
+    'code' => '500',
+    'chip' => 'Shelf Malfunction',
+    'headline' => 'Something Went Wrong',
+    'copy' => 'Our team has been notified. Please try again in a little while — your library and orders are safe.',
+])
+@endcomponent
 @endsection

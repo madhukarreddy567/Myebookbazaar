@@ -1,10 +1,10 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('title', 'Offers — MyEbookBazaar')
 @section('meta_description', 'All live offers in one place — sale prices on ebooks and combos, only while they last.')
 
 @section('content')
-<div class="max-w-container mx-auto px-4 pt-6 pb-10">
+<div class="st-page max-w-container mx-auto px-4 pt-6 pb-10">
     <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'Offers']]" />
 
     <h1 class="st-h text-[34px] md:text-[42px] mt-3">Offers</h1>

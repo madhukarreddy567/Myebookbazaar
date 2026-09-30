@@ -2,6 +2,7 @@
 @import "./ui.css";
 @import "./admin.css";
 @import "./stitch-v2.css";
+@import "./stitch.css";
 
 @tailwind base;
 @tailwind components;

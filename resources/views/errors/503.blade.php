@@ -1,20 +1,18 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('title', 'Under maintenance — MyEbookBazaar')
 
 @section('content')
-<div class="error-wrap">
-    <div class="stripe-divider mx-auto mb-6" aria-hidden="true"></div>
-    <p class="error-code">503</p>
-    <h1 class="text-4xl font-extrabold mt-4">We are doing quick maintenance</h1>
-    {{-- Phase 6: optional custom message from Settings → Security. --}}
+@component('errors.partials.shell', [
+    'code' => '503',
+    'chip' => 'Routine Upgrade',
+    'headline' => 'We are doing quick maintenance',
+    'copy' => 'Routine system upgrade in progress to speed up your ebook downloads. All your purchased ebooks remain safe in your library.',
+])
     @if(!empty($customMessage ?? ''))
-        <p class="text-mutedtext mt-3">{{ $customMessage }}</p>
+        <p class="font-body-sm text-body-sm text-secondary mt-3 max-w-[340px] mx-auto">{{ $customMessage }}</p>
     @else
-        <p class="text-mutedtext mt-3">The store will be back very soon. Thank you for waiting.</p>
+        <p class="font-body-sm text-body-sm text-on-surface-variant mt-3 max-w-[340px] mx-auto">The store will be back very soon. Thank you for waiting.</p>
     @endif
-    <div class="mt-8">
-        <a href="{{ route('home') }}" class="st-btn st-btn-amber">Try again</a>
-    </div>
-</div>
+@endcomponent
 @endsection

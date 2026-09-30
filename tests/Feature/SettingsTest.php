@@ -380,7 +380,7 @@ class SettingsTest extends TestCase
         // Capture the data the AppServiceProvider composer attaches to the
         // customer layout when the homepage renders.
         $seen = [];
-        \Illuminate\Support\Facades\View::composer('layouts.app', function ($view) use (&$seen) {
+        \Illuminate\Support\Facades\View::composer('layouts.stitch', function ($view) use (&$seen) {
             $seen = $view->getData();
         });
 

@@ -1,224 +1,166 @@
-@extends('layouts.app')
+{{-- Customer login — Stitch design: tabbed auth card, tabs link to login/register routes. --}}
+@extends('layouts.stitch')
 
 @section('robots', 'noindex,nofollow')
 
-@section('title', 'Login — MyEbookBazaar')
+@section('title', 'Log In — MyEbookBazaar')
 @section('meta_description', 'Log in to MyEbookBazaar to access your digital library, download links, orders and invoices.')
 
 @section('content')
-<div class="st-auth-shell">
-    <div class="flex items-center justify-between gap-4 mb-6">
-        <p class="st-crumb inline-flex items-center gap-2">
-            <x-ui.icon name="lock" class="w-4 h-4" /> Customer Authentication <span class="sep">/</span> <strong class="text-[#101E28]">Account Login</strong>
-        </p>
-        <p class="text-sm st-muted hidden sm:block">
-            New to the bazaar?
-            <a href="{{ route('register') }}" class="font-extrabold text-[#D97706] underline underline-offset-4 ml-1">Create an Account</a>
-        </p>
-    </div>
-
-    <div class="grid lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
-        <div class="flex flex-col gap-5">
-            {{-- LOGIN CARD --}}
-            <div class="st-auth-card st-login-card">
-                <p class="st-eyebrow"><x-ui.icon name="book" class="w-4 h-4" /> Secure reader access</p>
-                <h1 class="st-auth-title mt-2">Welcome Back, Reader</h1>
-                <p class="st-muted text-[15px] mt-3 leading-relaxed">
-                    Access your purchased ebooks, instant download tokens, and continuous reading library.
-                </p>
-
-                <div class="mt-6">
-                    <x-ui.google-button label="Continue with Google" divider="or log in with email" :divider-after="true" />
-                </div>
-
-                <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5 mt-6">
-                    @csrf
-
-                    <div>
-                        <label class="st-label" for="email">Email Address <span class="st-hint">Registered email</span></label>
-                        <div class="st-input-wrap">
-                            <x-ui.icon name="mail" class="st-input-icon" />
-                            <input id="email" name="email" type="email" class="st-input has-icon"
-                                   placeholder="you@domain.com" value="{{ old('email') }}"
-                                   required autocomplete="email" autofocus
-                                   @if($errors->first('email')) aria-invalid="true" @endif>
-                        </div>
-                        @if($errors->first('email'))
-                        <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('email') }}</span></p>
-                        @endif
-                    </div>
-
-                    <div x-data="{ show: false }">
-                        <label class="st-label" for="password">Password <span class="st-hint">Case-sensitive</span></label>
-                        <div class="st-input-wrap">
-                            <x-ui.icon name="lock" class="st-input-icon" />
-                            <input id="password" name="password" type="password" x-bind:type="show ? 'text' : 'password'"
-                                   class="st-input has-icon has-trailing" placeholder="••••••••••••"
-                                   required autocomplete="current-password"
-                                   @if($errors->first('password')) aria-invalid="true" @endif>
-                            <button type="button" class="st-eye" @click="show = !show" aria-label="Show or hide password">
-                                <x-ui.icon name="eye" x-show="!show" />
-                                <x-ui.icon name="eye-off" x-show="show" x-cloak />
-                            </button>
-                        </div>
-                        @if($errors->first('password'))
-                        <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('password') }}</span></p>
-                        @endif
-                    </div>
-
-                    <div class="flex items-center justify-between">
-                        <label class="flex items-center gap-2.5 cursor-pointer select-none text-sm font-medium">
-                            <input type="checkbox" name="remember" value="1" class="st-check !mt-0">
-                            <span>Remember this device</span>
-                        </label>
-                        <a href="{{ route('password.request') }}" class="text-sm font-extrabold text-[#0B3D4A] hover:underline underline-offset-4">Forgot Password?</a>
-                    </div>
-
-                    <div class="st-security-box">
-                        <x-ui.icon name="shield" class="w-6 h-6 text-[#0B3D4A] shrink-0" />
-                        <p>
-                            <strong class="text-[#0B3D4A]">Security Protected:</strong>
-                            Max 5 login attempts per minute. The account locks automatically
-                            on consecutive failed tries to safeguard your digital licenses.
-                        </p>
-                    </div>
-
-                    <div class="st-turnstile-box">
-                        <p class="flex items-center gap-2 text-sm font-bold">
-                            <span class="w-2 h-2 rounded-full bg-[#F5A623]" aria-hidden="true"></span>
-                            Protected by Cloudflare Turnstile
-                            <span class="st-muted font-medium">• Smart bot prevention active</span>
-                            <span class="ml-auto inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider text-[#0B3D4A]">
-                                <x-ui.icon name="lock" class="w-3.5 h-3.5" /> Encrypted
-                            </span>
-                        </p>
-                        <x-turnstile form="login" />
-                    </div>
-
-                    <button type="submit" class="st-btn st-btn-teal w-full !text-[17px]">
-                        Sign In to My Account <x-ui.icon name="arrow-right" class="w-5 h-5" />
-                    </button>
-                </form>
-
-                <p class="text-center text-sm st-muted mt-5">
-                    Having trouble signing in? Reset your password below or write to
-                    <a href="mailto:{{ settings('site.support_email', 'support@myebookbazaar.com') }}" class="font-bold text-[#0B3D4A] hover:underline">{{ settings('site.support_email', 'support@myebookbazaar.com') }}</a>
-                </p>
-            </div>
-
-            {{-- RESET PASSWORD PANEL (real password.email endpoint) --}}
-            <div class="st-card p-6 md:p-7" x-data="{ open: false }">
-                <button type="button" @click="open = !open" :aria-expanded="open" class="w-full flex items-center justify-between gap-3 text-left">
-                    <span>
-                        <span class="st-h text-[20px] block">Need to reset your password?</span>
-                        <span class="text-sm st-muted">Recover reading credentials in under 60 seconds</span>
-                    </span>
-                    <x-ui.icon name="chevron-down" class="w-5 h-5 st-muted shrink-0 transition-transform" ::class="{ 'rotate-180': open }" />
-                </button>
-                <div x-show="open" x-cloak class="mt-5">
-                    @if(session('status'))
-                        <div class="st-security-box !bg-[#E9F7EE] !border-[#BFE6CC] mb-4">
-                            <x-ui.icon name="check-circle" class="w-5 h-5 text-[#1E8E5A] shrink-0" />
-                            <p class="text-sm">{{ session('status') }}</p>
-                        </div>
-                    @endif
-                    <p class="text-sm st-muted leading-relaxed">
-                        Enter your registered email address. We&rsquo;ll dispatch a secure,
-                        time-limited reset link valid for <strong class="text-[#101E28]">60 minutes</strong>.
-                        If an account matches, the recovery token arrives instantly.
-                    </p>
-                    <form method="POST" action="{{ route('password.email') }}" class="flex flex-col sm:flex-row gap-3 mt-4">
-                        @csrf
-                        <label for="reset-email" class="sr-only">Registered email address</label>
-                        <div class="st-input-wrap flex-1">
-                            <x-ui.icon name="mail" class="st-input-icon" />
-                            <input id="reset-email" name="email" type="email" required
-                                   class="st-input has-icon" placeholder="your.registered@email.com"
-                                   value="{{ old('email') }}" autocomplete="email">
-                        </div>
-                        <button type="submit" class="st-btn st-btn-amber !min-h-[54px] whitespace-nowrap">
-                            <x-ui.icon name="mail" class="w-4 h-4" /> Send Reset Link
-                        </button>
-                    </form>
-                    @error('email')
-                    <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $message }}</span></p>
-                    @enderror
-                    <div class="flex flex-wrap gap-x-6 gap-y-1.5 mt-3 text-[12px] st-muted">
-                        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="clock" class="w-4 h-4" /> Rate limit: 3 requests / min</span>
-                        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="mail" class="w-4 h-4" /> Auto-expires in 60m</span>
-                    </div>
-                </div>
-            </div>
+<div class="st-page w-full bg-surface py-10 px-4 sm:px-6">
+    <div class="w-full max-w-[420px] mx-auto bg-surface-container-lowest rounded-[16px] shadow-sm p-6 sm:p-8">
+        {{-- Top pill segmented switch: tabs link to routes, login active here --}}
+        <div class="bg-surface-container p-1 rounded-full flex items-center justify-between mb-8">
+            <span class="flex-1 py-2 text-center rounded-full font-label-md text-label-md font-semibold bg-surface-container-lowest text-on-surface shadow-sm" aria-current="page">
+                Log In
+            </span>
+            <a href="{{ route('register') }}" class="flex-1 py-2 text-center rounded-full font-label-md text-label-md font-medium text-on-surface-variant hover:text-on-surface transition-all duration-200">
+                Create Account
+            </a>
         </div>
 
-        {{-- RIGHT SIDEBAR --}}
-        <aside class="flex flex-col gap-5">
-            <div class="st-sidepanel p-6">
-                <div class="flex items-center justify-between mb-5">
-                    <p class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#0B3D4A]">Your digital bookshelf awaits</p>
-                    <span class="inline-flex items-center gap-1 text-[11px] font-extrabold text-[#D97706] bg-white rounded-full px-2.5 py-1 border border-[#E0E8FA]">
-                        <x-ui.icon name="zap" class="w-3.5 h-3.5" /> Instant Access
-                    </span>
-                </div>
-                <div class="flex flex-col gap-3.5">
-                    <div class="bg-white rounded-2xl border border-[#E0E8FA] p-5">
-                        <p class="font-extrabold text-[16px]">Instant PDF Re-downloads</p>
-                        <p class="text-sm st-muted mt-1 leading-relaxed">Download your purchased editions anytime in DRM-free PDF format. Read on phone, tablet or computer.</p>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-[#E0E8FA] p-5">
-                        <p class="font-extrabold text-[16px]">Purchase History</p>
-                        <p class="text-sm st-muted mt-1 leading-relaxed">Keep receipts, order invoices, and Razorpay transaction IDs organized for lifetime record-keeping.</p>
-                    </div>
-                    <div class="bg-white rounded-2xl border border-[#E0E8FA] p-5">
-                        <p class="font-extrabold text-[16px]">Lifetime Library Access</p>
-                        <p class="text-sm st-muted mt-1 leading-relaxed">Every purchased ebook stays in your personal library forever, with signed download links generated on demand.</p>
-                    </div>
-                </div>
+        {{-- Header context --}}
+        <div class="mb-6 text-center">
+            <h1 class="font-headline-sm text-headline-sm text-on-surface">Welcome Back, Reader</h1>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Access your reading library and purchases</p>
+        </div>
+
+        {{-- Social auth CTA (renders only when Google OAuth is configured) --}}
+        <x-ui.google-button label="Continue with Google" divider="or continue with email" :divider-after="true" />
+
+        {{-- Form --}}
+        <form method="POST" action="{{ route('login') }}" class="space-y-4" x-data="{ show: false }">
+            @csrf
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="email">Email Address</label>
+                <input class="w-full h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                       id="email" name="email" type="email" placeholder="name@example.com"
+                       value="{{ old('email') }}" required autocomplete="email" autofocus
+                       @if($errors->first('email')) aria-invalid="true" @endif>
+                @if($errors->first('email'))
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('email') }}</span>
+                </p>
+                @endif
             </div>
 
-            @if($spotlight ?? null)
-            <a href="{{ route('books.show', $spotlight->slug) }}" class="st-card p-5 flex gap-4 items-center hover:border-[#0B3D4A] transition-colors">
-                @php($spotCover = $spotlight->displayCoverUrl())
-                @if($spotCover)
-                <img src="{{ $spotCover }}" alt="" class="w-16 rounded-lg shadow-md shrink-0" loading="lazy">
-                @endif
-                <div class="min-w-0">
-                    <p class="flex items-center gap-2">
-                        <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#FFF0D6] text-[#B45309] rounded-md px-2 py-0.5">Featured</span>
-                        @if($spotlight->edition)<span class="text-[11px] font-bold st-muted uppercase tracking-wider">Edition {{ $spotlight->edition }}</span>@endif
-                    </p>
-                    <p class="font-extrabold text-[16px] mt-1 line-clamp-1">{{ $spotlight->title }}</p>
-                    <p class="text-sm st-muted line-clamp-1">{{ $spotlight->short_description }}</p>
-                    <p class="flex items-baseline gap-2 mt-1">
-                        <span class="text-xl font-extrabold text-[#D97706]">{{ $spotlight->price_display }}</span>
-                        @if($spotlight->price_regular_display)
-                        <span class="book-card-oldprice text-sm">{{ $spotlight->price_regular_display }}</span>
-                        @endif
-                        <span class="ml-auto text-sm font-extrabold text-[#0B3D4A] inline-flex items-center gap-1">Preview <x-ui.icon name="arrow-right" class="w-4 h-4" /></span>
-                    </p>
+            <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                    <label class="font-label-md text-label-md text-on-surface font-medium" for="password">Password</label>
+                    <a class="font-body-sm text-body-sm text-tertiary hover:underline" href="{{ route('password.request') }}">Forgot Password?</a>
                 </div>
-            </a>
-            @endif
+                <div class="relative">
+                    <input class="w-full h-12 px-4 pr-11 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                           id="password" name="password" placeholder="••••••••"
+                           x-bind:type="show ? 'text' : 'password'"
+                           required autocomplete="current-password"
+                           @if($errors->first('password')) aria-invalid="true" @endif>
+                    <button type="button" aria-label="Show or hide password" @click="show = !show"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                        <span class="material-symbols-outlined text-[20px]" x-show="!show">visibility</span>
+                        <span class="material-symbols-outlined text-[20px]" x-show="show" x-cloak>visibility_off</span>
+                    </button>
+                </div>
+                @if($errors->first('password'))
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('password') }}</span>
+                </p>
+                @endif
+            </div>
 
-            <div class="st-sidepanel p-6">
-                <p class="font-extrabold text-[15px] inline-flex items-center gap-2"><x-ui.icon name="lock" class="w-5 h-5 text-[#0B3D4A]" /> Protected Authentication Perimeter</p>
-                <p class="text-sm st-muted mt-2 leading-relaxed">
-                    Encrypted connection • HttpOnly &amp; SameSite=Lax session cookies.
-                    Passwords are one-way hashed and never stored in plain text.
-                    We never share your reading habits.
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2.5 cursor-pointer select-none font-body-sm text-body-sm text-on-surface-variant">
+                    <input type="checkbox" name="remember" value="1"
+                           class="w-4 h-4 rounded accent-primary-container cursor-pointer">
+                    Remember this device
+                </label>
+            </div>
+
+            <div class="flex items-start gap-2.5 bg-surface-container-low/60 rounded-DEFAULT p-3.5">
+                <span class="material-symbols-outlined text-[18px] text-tertiary shrink-0 mt-0.5">shield</span>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                    Protected by Cloudflare Turnstile. Smart bot prevention active — your session is encrypted and never shared.
                 </p>
             </div>
-        </aside>
+
+            <x-turnstile form="login" />
+
+            <div class="pt-2">
+                <button type="submit"
+                        class="w-full h-12 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-[0.99] shadow-sm flex items-center justify-center gap-2">
+                    <span>Log In</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+            </div>
+        </form>
+
+        {{-- Bottom contextual action --}}
+        <div class="mt-6 pt-5 text-center bg-surface-container-low/40 rounded-DEFAULT p-3">
+            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                Don&rsquo;t have an account?
+                <a class="text-tertiary font-medium hover:underline ml-1" href="{{ route('register') }}">Create one</a>
+            </p>
+        </div>
+
+        {{-- Inline reset-password panel (posts to the real password.email endpoint) --}}
+        <div class="mt-6 bg-surface-container-lowest rounded-DEFAULT shadow-sm p-5 sm:p-6" x-data="{ open: false }">
+            <button type="button" @click="open = !open" :aria-expanded="open"
+                    class="w-full flex items-center justify-between gap-3 text-left">
+                <span>
+                    <span class="font-label-md text-label-md font-semibold text-on-surface block">Need to reset your password?</span>
+                    <span class="font-body-sm text-body-sm text-on-surface-variant">Get a secure reset link by email</span>
+                </span>
+                <span class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px] transition-transform duration-200" :class="open ? 'rotate-180' : ''">expand_more</span>
+                </span>
+            </button>
+            <div x-show="open" x-cloak class="mt-4">
+                @if(session('status'))
+                <p class="font-body-sm text-body-sm text-on-surface bg-surface-container-low rounded-DEFAULT px-4 py-3 mb-4" role="status">{{ session('status') }}</p>
+                @endif
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                    Enter your registered email address and we&rsquo;ll send you a secure, time-limited reset link.
+                </p>
+                <form method="POST" action="{{ route('password.email') }}" class="flex flex-col sm:flex-row gap-3 mt-4">
+                    @csrf
+                    <label for="reset-email" class="sr-only">Registered email address</label>
+                    <input id="reset-email" name="email" type="email" required
+                           class="flex-1 h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                           placeholder="your.registered@email.com"
+                           value="{{ old('email') }}" autocomplete="email">
+                    <button type="submit"
+                            class="h-12 px-5 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-[0.99] shadow-sm whitespace-nowrap">
+                        Send Reset Link
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 
-    <div class="st-trust-row mt-10">
-        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="download" class="w-4 h-4" /> Instant PDF</span>
-        <span class="text-[#C3CDD8]" aria-hidden="true">•</span>
-        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="zap" class="w-4 h-4" /> Zero DRM friction</span>
-        <span class="text-[#C3CDD8]" aria-hidden="true">•</span>
-        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="shield" class="w-4 h-4" /> Razorpay checkout</span>
-        <span class="text-[#C3CDD8]" aria-hidden="true">•</span>
-        <span class="inline-flex items-center gap-1.5"><x-ui.icon name="book" class="w-4 h-4" /> 24/7 library access</span>
-    </div>
+    @if($spotlight ?? null)
+    <a href="{{ route('books.show', $spotlight->slug) }}"
+       class="block w-full max-w-[420px] mx-auto mt-6 bg-surface-container-lowest rounded-DEFAULT p-4 shadow-sm hover:shadow transition-shadow">
+        <div class="flex items-center gap-4">
+            @php($spotCover = $spotlight->displayCoverUrl())
+            @if($spotCover)
+            <img src="{{ $spotCover }}" alt="" class="w-12 rounded-md shadow-sm shrink-0" loading="lazy">
+            @endif
+            <div class="min-w-0 flex-1">
+                <p class="font-label-sm text-label-sm text-secondary font-semibold uppercase tracking-wider">Featured this week</p>
+                <p class="font-headline-sm text-headline-sm text-on-surface truncate">{{ $spotlight->title }}</p>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                    <span class="font-semibold text-primary">{{ $spotlight->price_display }}</span>
+                    @if($spotlight->price_regular_display)
+                    <span class="line-through text-on-surface-variant/60 ml-1.5">{{ $spotlight->price_regular_display }}</span>
+                    @endif
+                </p>
+            </div>
+            <span class="material-symbols-outlined text-on-surface-variant shrink-0">arrow_forward</span>
+        </div>
+    </a>
+    @endif
 </div>
 @endsection

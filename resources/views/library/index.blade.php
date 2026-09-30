@@ -1,9 +1,9 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('robots', 'noindex,nofollow')
 
 @section('title', 'My Digital Library — MyEbookBazaar')
-@section('meta_description', 'Your personal MyEbookBazaar library: purchased ebooks, signed download links, invoices and lifetime access.')
+@section('meta_description', 'Your MyEbookBazaar digital library: purchased ebooks, secure signed download links and invoices.')
 
 @php
 $fmtSize = function ($bytes) {
@@ -15,253 +15,275 @@ $fmtSize = function ($bytes) {
 $libCategories = $items->filter(fn ($it) => $it->book && $it->book->category)
     ->map(fn ($it) => $it->book->category)
     ->unique('id')->values();
-$regionLabel = auth()->user() && auth()->user()->pricing_region === 'INTL' ? 'INTL $' : 'INR ₹';
+$regionLabel = auth()->user() && auth()->user()->pricing_region === 'INTL' ? 'INTL ($)' : 'India (₹)';
 @endphp
 
 @section('content')
-<div class="max-w-container mx-auto px-4 pt-6 pb-10" x-data="{ q: '', cat: 'all' }">
-    <p class="st-crumb">
-        <a href="{{ route('home') }}">Home</a><span class="sep">›</span>
-        <a href="{{ route('account') }}">Reader Portal</a><span class="sep">›</span>
-        <strong class="text-[#101E28]">My Digital Library</strong>
-    </p>
+<div class="st-page w-full max-w-[1120px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
 
-    <div class="grid lg:grid-cols-[1.5fr_1fr] gap-5 mt-4 items-start">
-        {{-- Header panel --}}
-        <div class="st-card p-6 md:p-8">
-            <p class="inline-flex items-center gap-2 text-[12px] font-bold st-muted bg-[#F1F4FA] border border-[#E4E8F2] rounded-full px-3.5 py-1.5">
-                <span class="w-1.5 h-1.5 rounded-full bg-[#F5A623]" aria-hidden="true"></span>
-                Verified Account • {{ auth()->user()->name }} • {{ auth()->user()->email }} • {{ $regionLabel }}
+    {{-- Top header --}}
+    <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6">
+        <div class="space-y-1">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-container/10 text-primary-container font-label-sm text-label-sm tracking-wide uppercase font-semibold">
+                <span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+                Personal Collection
+            </div>
+            <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight font-bold">My Library</h1>
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-xl">
+                Your digital bookshelf — {{ auth()->user()->name }} · {{ $regionLabel }}.
+                Secure download links, refreshed on every visit.
             </p>
-            <h1 class="st-h text-[34px] md:text-[42px] mt-3">My Digital Library</h1>
-            <p class="st-muted text-[15px] mt-2 leading-relaxed max-w-xl">
-                Access your purchased ebooks, secure signed download tokens, and reading companions.
-                Direct DRM-free files ready for Kindle, Apple Books, Kobo, and e-ink displays.
-            </p>
-            <div class="st-security-box mt-5">
-                <x-ui.icon name="lock" class="w-5 h-5 text-[#0B3D4A] shrink-0" />
-                <p class="text-sm">
-                    <strong class="text-[#0B3D4A]">Security Protocol:</strong>
-                    Signed URLs expire in 10 mins • {{ $limit }} lifetime downloads/edition
-                    <a href="#device-help" class="font-extrabold text-[#0B3D4A] hover:underline underline-offset-4 ml-2 whitespace-nowrap">Transfer Guide →</a>
+        </div>
+        <div class="flex items-center gap-2 self-start sm:self-auto bg-surface-container-low px-3.5 py-1.5 rounded-full text-secondary text-body-sm font-body-sm shadow-sm">
+            <span class="material-symbols-outlined text-[18px] text-tertiary">lock</span>
+            <span>Signed links expire in 10 minutes</span>
+        </div>
+    </header>
+
+    {{-- Shelf summary strip --}}
+    <div class="w-full bg-surface-container-low rounded-xl px-5 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm mb-8">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[22px]">auto_stories</span>
+            </div>
+            <div>
+                <p class="font-label-md text-label-md font-semibold text-on-surface">
+                    {{ $items->count() }} {{ Str::plural('ebook', $items->count()) }} purchased · {{ $limit }} {{ Str::plural('download', $limit) }} per book
+                </p>
+                <p class="font-body-sm text-body-sm text-on-surface-variant">
+                    Downloads are formatted for Apple Books, Kindle, and PDF viewers.
                 </p>
             </div>
         </div>
-
-        {{-- Stat cards --}}
-        <div class="grid grid-cols-2 gap-4">
-            <div class="st-stat-card">
-                <span class="st-menu-ic !w-11 !h-11 mb-3"><x-ui.icon name="book" /></span>
-                <p class="st-stat-num">{{ $items->count() }}</p>
-                <p class="st-stat-label">Books owned</p>
-                <p class="text-[13px] font-bold text-[#D97706] mt-1.5">100% DRM-Free</p>
-            </div>
-            <div class="st-stat-card">
-                <span class="st-menu-ic !w-11 !h-11 mb-3"><x-ui.icon name="download" /></span>
-                <p class="st-stat-num">{{ $limit }}</p>
-                <p class="st-stat-label">Downloads / book</p>
-                <p class="text-[13px] font-bold text-[#0B3D4A] mt-1.5">Lifetime access</p>
-            </div>
-            <div class="st-darkpanel !rounded-[18px] p-5 col-span-2">
-                <div class="relative z-10 flex items-center justify-between gap-4">
-                    <div>
-                        <p class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#F5A623] inline-flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#F5A623] animate-pulse" aria-hidden="true"></span> Link status
-                        </p>
-                        <p class="text-white font-extrabold text-lg mt-1">Active Signed Sessions</p>
-                        <p class="text-white/60 text-[13px]">Fresh 10-minute download links generated on every visit</p>
-                    </div>
-                    <x-ui.icon name="shield" class="w-10 h-10 text-white/25 shrink-0" />
-                </div>
-            </div>
-        </div>
+        <a href="{{ route('books') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-secondary hover:bg-surface-container font-label-sm text-label-sm transition-colors shrink-0">
+            <span class="material-symbols-outlined text-[16px]">add</span>
+            Browse more ebooks
+        </a>
     </div>
 
-    @if($errors->any())
-        <x-ui.alert type="warning" class="mt-5">{{ $errors->first() }}</x-ui.alert>
-    @endif
-
     @if($items->isEmpty())
-        <div class="st-card st-empty mt-6">
-            <x-ui.empty-state icon="book" title="Your library is empty"
-                text="Your purchased ebooks will live here, ready to download any time."
-                :action-url="route('books')" action-label="Browse ebooks" />
+        <div class="bg-surface-container-lowest rounded-xl p-10 sm:p-14 shadow-sm text-center">
+            <div class="w-14 h-14 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-[28px]">menu_book</span>
+            </div>
+            <h2 class="font-headline-md text-headline-md text-on-surface font-bold">Your library is empty</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-md mx-auto">
+                Your purchased ebooks will live here, ready to download any time.
+            </p>
+            <a href="{{ route('books') }}" class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:bg-primary transition-all active:scale-[0.99] shadow-sm mt-6">
+                <span class="material-symbols-outlined text-[18px]">storefront</span>
+                Browse ebooks
+            </a>
         </div>
     @else
-        {{-- Search + filters --}}
-        <div class="st-card p-4 mt-6">
-            <div class="flex flex-col md:flex-row gap-3">
-                <div class="st-input-wrap flex-1">
-                    <x-ui.icon name="search" class="st-input-icon" />
-                    <label for="lib-q" class="sr-only">Filter by title, author, or order ID</label>
-                    <input id="lib-q" x-model="q" type="search" placeholder="Filter by title, author, or order ID…"
-                           class="st-input has-icon !min-h-[48px]">
-                </div>
-                <div class="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0" role="group" aria-label="Filter by category">
-                    <button type="button" @click="cat = 'all'" :class="cat === 'all' ? 'chip-active' : ''"
-                            class="chip shrink-0">All Formats</button>
-                    @foreach($libCategories as $category)
-                    <button type="button" @click="cat = '{{ $category->id }}'" :class="cat === '{{ $category->id }}' ? 'chip-active' : ''"
-                            class="chip shrink-0">{{ $category->name }}</button>
-                    @endforeach
-                </div>
+        {{-- Search & filter controls --}}
+        <section aria-label="Book catalog filters" class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div aria-label="Filter library by category" class="flex flex-wrap items-center gap-2" role="tablist" id="library-filter-btns">
+                <button aria-selected="true" class="library-filter-btn px-4 py-2 rounded-xl bg-secondary text-on-secondary font-label-md text-label-md shadow-sm transition-all active:scale-[0.99]" data-filter="all" role="tab" type="button">
+                    All ({{ $items->count() }})
+                </button>
+                @foreach($libCategories as $category)
+                <button aria-selected="false" class="library-filter-btn px-4 py-2 rounded-xl bg-surface-container-lowest text-on-surface-variant hover:text-on-surface font-label-md text-label-md transition-all active:scale-[0.99] shadow-sm" data-filter="cat-{{ $category->id }}" role="tab" type="button">
+                    {{ $category->name }} ({{ $items->filter(fn ($it) => $it->book && $it->book->category_id === $category->id)->count() }})
+                </button>
+                @endforeach
             </div>
-        </div>
+            <div class="relative w-full md:w-72">
+                <label class="sr-only" for="library-search">Search your library</label>
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-on-surface-variant">
+                    <span class="material-symbols-outlined text-[18px]">search</span>
+                </span>
+                <input class="w-full h-11 pl-10 pr-4 bg-surface-container-lowest rounded-xl font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/60 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-container" id="library-search" placeholder="Search title or topics..." type="text"/>
+            </div>
+        </section>
 
-        {{-- Purchased ebook cards --}}
-        <div class="mt-5 space-y-5">
+        {{-- Ebook cards --}}
+        <section aria-label="Purchased Bookshelf" class="grid grid-cols-1 gap-6 mb-12">
             @foreach($items as $item)
             @php
                 $book = $item->book;
                 $sizeLabel = $book ? $fmtSize($book->file_size) : null;
                 $cover = $book?->displayCoverUrl();
                 $titleLower = mb_strtolower($item->title ?? ($book->title ?? ''));
-                $catId = $book && $book->category_id ? (string) $book->category_id : '';
+                $catFilter = $book && $book->category_id ? 'cat-'.$book->category_id : 'none';
                 $pct = $limit > 0 ? (int) round($item->downloads_left / $limit * 100) : 0;
                 $lowQuota = $item->downloads_left <= 1;
             @endphp
-            <article class="st-card p-5 md:p-6" x-data
-                     x-show="(cat === 'all' || cat === '{{ $catId }}') && '{{ $titleLower }}'.includes(q.toLowerCase())">
-                <div class="grid sm:grid-cols-[150px_1fr] gap-5">
-                    {{-- Cover --}}
-                    <div class="relative w-36 sm:w-full mx-auto sm:mx-0">
-                        @if($cover)
-                            <img src="{{ $cover }}" alt="Cover of {{ $item->title }}" class="w-full h-auto rounded-2xl shadow-lg" loading="lazy">
-                        @else
-                            <div class="book-cover-placeholder aspect-[3/4] rounded-2xl" role="img" aria-label="Cover coming soon"><span class="text-sm">{{ $item->title }}</span></div>
-                        @endif
-                        @if($book && $book->edition)
-                        <span class="absolute top-2 left-2 text-[10px] font-extrabold uppercase tracking-wider bg-[#0B3D4A] text-white rounded-md px-2 py-1">Edition {{ $book->edition }}</span>
-                        @endif
-                        <span class="st-badge-free !top-auto !bottom-2">DRM-Free</span>
-                    </div>
-
-                    {{-- Details --}}
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <p class="text-[11px] font-extrabold uppercase tracking-[0.14em] text-[#5C6B75]">
-                                @if($book && $book->category){{ $book->category->name }} • @endif
-                                @if($book && $book->pages){{ $book->pages }} pages @else PDF ebook @endif
-                            </p>
-                            <p class="inline-flex items-center gap-1.5 text-[12px] font-bold bg-[#EEF3FF] text-[#0B3D4A] rounded-lg px-2.5 py-1.5">
-                                <x-ui.icon name="file-text" class="w-3.5 h-3.5" />
-                                Order <span class="font-extrabold">#{{ $item->order->order_number ?? $item->order_id }}</span>
-                                <span class="text-[#D97706]">Paid {{ $item->price_display }}</span>
-                            </p>
+            <article class="ebook-item bg-surface-container-lowest rounded-xl p-5 sm:p-7 shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row gap-6 md:gap-8 items-start" data-category="{{ $catFilter }}" data-title="{{ $titleLower }}">
+                {{-- Book cover --}}
+                <div class="w-full sm:w-48 md:w-52 aspect-[3/4] sm:aspect-[2/3] shrink-0 rounded-DEFAULT overflow-hidden bg-surface-container relative shadow-sm group">
+                    @if($cover)
+                        <img alt="Cover of {{ $item->title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out" src="{{ $cover }}" loading="lazy"/>
+                    @else
+                        <div class="w-full h-full flex flex-col items-center justify-center gap-2 p-4 bg-secondary text-on-secondary">
+                            <span class="material-symbols-outlined text-[36px]">menu_book</span>
+                            <p class="font-label-sm text-label-sm text-center line-clamp-3">{{ $item->title }}</p>
                         </div>
+                    @endif
+                    @if($book && $book->edition)
+                    <div class="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full bg-secondary/90 backdrop-blur-sm text-on-secondary font-label-sm text-[10px] uppercase tracking-wider font-semibold">
+                        Edition {{ $book->edition }}
+                    </div>
+                    @endif
+                </div>
 
-                        <h2 class="st-h text-[24px] md:text-[28px] mt-2">{{ $item->title }}</h2>
-                        <p class="text-sm st-muted mt-1">
-                            @if($book && $book->author)By {{ $book->author }} • @endif
-                            @if($book && $book->published_at)Published {{ $book->published_at->format('F Y') }}@endif
+                {{-- Meta & actions --}}
+                <div class="flex-1 flex flex-col justify-between w-full h-full space-y-4">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-2">
+                            @if($book && $book->category)
+                            <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-medium">
+                                {{ $book->category->name }}
+                            </span>
+                            @endif
+                            @if($book && $book->pages)
+                            <span class="px-2.5 py-0.5 rounded-full bg-surface-container text-secondary font-label-sm text-label-sm font-medium">
+                                PDF ({{ $book->pages }} Pages)
+                            </span>
+                            @endif
+                            <span class="inline-flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm ml-auto">
+                                <span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+                                Verified Purchase · Paid {{ $item->price_display }}
+                            </span>
+                        </div>
+                        <h2 class="font-headline-md text-headline-md text-on-surface font-bold tracking-tight">
+                            {{ $item->title }}
+                        </h2>
+                        <p class="font-body-md text-body-md text-on-surface-variant mt-1 max-w-2xl">
+                            @if($book && $book->author)By {{ $book->author }} · @endif
+                            Order <a href="{{ route('orders.show', $item->order) }}" class="font-semibold text-primary hover:underline">#{{ $item->order->order_number ?? $item->order_id }}</a>
                         </p>
                         @if($book && $book->short_description)
-                        <p class="text-[14px] st-muted mt-2 leading-relaxed">{{ $book->short_description }}</p>
+                        <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 max-w-2xl line-clamp-2">{{ $book->short_description }}</p>
                         @endif
+                    </div>
 
-                        {{-- Quota bar --}}
-                        <div class="st-quota mt-4 {{ $lowQuota ? 'low' : '' }}">
-                            <div class="flex items-center justify-between gap-3">
-                                <p class="text-[13px] font-bold {{ $lowQuota ? 'text-[#B3372F]' : 'text-[#0B3D4A]' }} inline-flex items-center gap-1.5">
-                                    @if($lowQuota)
-                                    <x-ui.icon name="alert" class="w-4 h-4" />
-                                    Low Quota Notice • Only {{ $item->downloads_left }} {{ $item->downloads_left === 1 ? 'download' : 'downloads' }} remaining!
-                                    @else
-                                    <x-ui.icon name="download" class="w-4 h-4" />
-                                    Download Quota • {{ $item->downloads_left }} of {{ $limit }} downloads remaining{{ $item->downloads_left === $limit ? ' (Fresh)' : '' }}
-                                    @endif
-                                </p>
-                                <span class="st-timer-chip" x-data="{ secs: 600 }" x-init="setInterval(() => { if (secs > 0) secs-- }, 1000)">
-                                    <x-ui.icon name="clock" class="w-3.5 h-3.5" />
-                                    <span x-show="secs > 0" x-text="String(Math.floor(secs / 60)).padStart(2, '0') + 'm:' + String(secs % 60).padStart(2, '0') + 's'"></span>
-                                    <span x-show="secs === 0" x-cloak>expired — refresh page</span>
-                                </span>
-                            </div>
-                            <div class="st-quota-track" role="progressbar" aria-label="Downloads remaining" aria-valuenow="{{ $item->downloads_left }}" aria-valuemin="0" aria-valuemax="{{ $limit }}">
-                                <div class="st-quota-fill" style="width: {{ $pct }}%"></div>
-                            </div>
-                        </div>
+                    {{-- Download actions --}}
+                    <div class="pt-2 flex flex-col sm:flex-row sm:items-center flex-wrap gap-3">
+                        @if(!$downloadsEnabled)
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">Downloads are currently disabled.</p>
+                        @elseif($item->download_url)
+                            <a class="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:bg-primary transition-all active:scale-[0.99] shadow-sm" href="{{ $item->download_url }}">
+                                <span class="material-symbols-outlined text-[18px]">download</span>
+                                <span>Download PDF{{ $sizeLabel ? ' ('.$sizeLabel.')' : '' }}</span>
+                            </a>
+                        @elseif(!$book || !$book->hasFile())
+                            <p class="font-body-sm text-body-sm text-on-surface-variant">PDF not uploaded yet.</p>
+                        @else
+                            <p class="font-body-sm text-body-sm font-semibold text-error">Download limit reached.</p>
+                        @endif
+                        @if($lowQuota && $item->download_url)
+                        <a href="{{ route('contact') }}" class="inline-flex items-center gap-1.5 text-primary font-label-md text-label-md font-semibold hover:underline">
+                            <span>Request limit extension</span>
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                        @endif
+                    </div>
 
-                        {{-- Actions --}}
-                        <div class="flex flex-wrap items-center gap-3 mt-4">
-                            @if(!$downloadsEnabled)
-                                <p class="text-sm st-muted">Downloads are currently disabled.</p>
-                            @elseif($item->download_url)
-                                <a href="{{ $item->download_url }}" class="st-btn st-btn-teal !min-h-[50px]">
-                                    <x-ui.icon name="download" class="w-5 h-5" />
-                                    Download PDF{{ $sizeLabel ? ' ('.$sizeLabel.')' : '' }}
-                                </a>
-                            @elseif(!$book || !$book->hasFile())
-                                <p class="text-sm st-muted">PDF not uploaded yet.</p>
-                            @else
-                                <p class="text-sm font-bold text-[#B3372F]">Download limit reached.</p>
-                            @endif
-                            @if($lowQuota && $item->download_url)
-                                <a href="{{ route('contact') }}" class="inline-flex items-center gap-1.5 text-sm font-bold text-[#0B3D4A] hover:underline underline-offset-4">
-                                    <x-ui.icon name="info" class="w-4 h-4" /> Request Limit Extension
-                                </a>
-                            @endif
-                            <span class="ml-auto inline-flex items-center gap-3 text-[13px] font-bold">
-                                <a href="{{ route('orders.show', $item->order) }}" class="inline-flex items-center gap-1.5 text-[#0B3D4A] hover:underline underline-offset-4">
-                                    <x-ui.icon name="file-text" class="w-4 h-4" /> Invoice #INV-{{ $item->order->order_number ?? $item->order_id }}
-                                </a>
+                    {{-- Quota & link expiry --}}
+                    <div class="pt-4 mt-2 bg-surface-container-low/50 rounded-DEFAULT p-3.5 flex flex-col gap-2.5">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-on-surface-variant">
+                            <p class="font-body-sm text-body-sm flex items-center gap-1.5">
+                                @if($lowQuota)
+                                <span class="material-symbols-outlined text-[16px] text-error">warning</span>
+                                <span>Remaining downloads: <strong class="text-on-surface font-semibold">{{ $item->downloads_left }} of {{ $limit }}</strong> — contact support if you need more.</span>
+                                @else
+                                <span class="material-symbols-outlined text-[16px] text-tertiary">info</span>
+                                <span>Remaining downloads: <strong class="text-on-surface font-semibold">{{ $item->downloads_left }} of {{ $limit }}</strong></span>
+                                @endif
+                            </p>
+                            @if($item->download_url)
+                            <span class="st-timer-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-lowest font-label-sm text-label-sm text-on-surface-variant shadow-sm shrink-0" x-data="{ secs: 600 }" x-init="setInterval(() => { if (secs > 0) secs-- }, 1000)">
+                                <span class="material-symbols-outlined text-[16px]">timer</span>
+                                <span x-show="secs > 0" x-text="String(Math.floor(secs / 60)).padStart(2, '0') + 'm:' + String(secs % 60).padStart(2, '0') + 's'"></span>
+                                <span x-show="secs === 0" x-cloak>expired — refresh page</span>
                             </span>
+                            @else
+                            <span class="st-timer-chip inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-container-lowest font-label-sm text-label-sm text-on-surface-variant shadow-sm shrink-0">
+                                <span class="material-symbols-outlined text-[16px]">timer</span>
+                                <span>links valid 10 min</span>
+                            </span>
+                            @endif
+                        </div>
+                        <div role="progressbar" aria-label="Downloads remaining" aria-valuenow="{{ $item->downloads_left }}" aria-valuemin="0" aria-valuemax="{{ $limit }}" class="h-1.5 rounded-full bg-surface-container overflow-hidden">
+                            <div class="st-quota-fill h-full rounded-full {{ $lowQuota ? 'bg-error' : 'bg-tertiary' }}" style="width: {{ $pct }}%"></div>
                         </div>
                     </div>
                 </div>
             </article>
             @endforeach
-        </div>
-
-        {{-- Help cards --}}
-        <section id="device-help" class="grid md:grid-cols-3 gap-5 mt-8 scroll-mt-24" aria-label="Download help">
-            <div class="st-card p-6">
-                <span class="st-menu-ic mb-4"><x-ui.icon name="book" /></span>
-                <h3 class="font-extrabold text-lg">Device Reading Instructions</h3>
-                <div class="text-sm st-muted mt-2 space-y-2 leading-relaxed">
-                    <p><strong class="text-[#101E28]">iPhone / iPad / Mac:</strong> tap Download PDF in Safari, then Share → Apple Books.</p>
-                    <p><strong class="text-[#101E28]">Android:</strong> open with Google Drive or ReadEra.</p>
-                    <p><strong class="text-[#101E28]">Kindle:</strong> forward the PDF to your @kindle.com address or use Amazon&rsquo;s Send to Kindle.</p>
-                </div>
-            </div>
-            <div class="st-card p-6">
-                <span class="st-menu-ic mb-4"><x-ui.icon name="lock" /></span>
-                <h3 class="font-extrabold text-lg">Signed 10-Min Links</h3>
-                <p class="text-sm st-muted mt-2 leading-relaxed">
-                    Each download URL contains a short-lived cryptographic HMAC signature to prevent
-                    unauthorized hotlinking. If your timer hits 0:00, simply refresh this page —
-                    a fresh link is generated every time you visit, until your {{ $limit }} downloads are used.
-                </p>
-                <p class="text-[12px] font-bold text-[#1E8E5A] mt-3 inline-flex items-center gap-1.5">
-                    <x-ui.icon name="check-circle" class="w-4 h-4" /> Zero DRM watermark locks
-                </p>
-            </div>
-            <div class="st-card p-6">
-                <span class="st-menu-ic mb-4"><x-ui.icon name="mail" /></span>
-                <h3 class="font-extrabold text-lg">Need a Limit Reset?</h3>
-                <p class="text-sm st-muted mt-2 leading-relaxed">
-                    Exceeded {{ $limit }} device transfers on a single title? Simply send an inquiry quoting
-                    your Order ID. Our customer success team re-arms download counters within a few hours.
-                </p>
-                <a href="{{ route('contact') }}" class="inline-flex items-center gap-1.5 text-sm font-extrabold text-[#0B3D4A] hover:underline underline-offset-4 mt-3">
-                    Email Support Team <x-ui.icon name="arrow-right" class="w-4 h-4" />
-                </a>
-            </div>
         </section>
 
-        {{-- Discover more --}}
-        <section class="st-darkpanel p-6 md:p-8 mt-8" aria-label="Discover more guides">
-            <div class="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+        {{-- Support callout --}}
+        <aside aria-label="Kindle and device assistance note" class="w-full bg-surface-container-low rounded-xl p-6 sm:p-7 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-full bg-surface-container-lowest text-secondary flex items-center justify-center shrink-0 shadow-sm">
+                    <span class="material-symbols-outlined text-[20px]">tablet_mac</span>
+                </div>
                 <div>
-                    <p class="text-[11px] font-extrabold uppercase tracking-[0.18em] text-[#F5A623]">Expand your stack</p>
-                    <h2 class="st-h !text-white text-[24px] mt-1.5">Discover more guides</h2>
-                    <p class="text-white/70 text-sm mt-1">Explore curated fitness, skills, and money playbooks.</p>
+                    <h3 class="font-headline-sm text-headline-sm text-on-surface font-bold">
+                        Reading on Kindle, iPad, or Android?
+                    </h3>
+                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                        Having trouble opening files on Kindle or iPad? Read our 2-minute setup guide or contact support.
+                    </p>
                 </div>
-                <a href="{{ route('books') }}" class="st-btn st-btn-amber shrink-0">
-                    Browse <x-ui.icon name="arrow-right" class="w-4 h-4" />
+            </div>
+            <div class="flex items-center gap-3 shrink-0 w-full sm:w-auto">
+                <a class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-surface-container-lowest text-secondary font-label-md text-label-md font-semibold hover:bg-surface-container transition-colors shadow-sm" href="{{ route('faq') }}">
+                    <span class="material-symbols-outlined text-[16px]">help_outline</span>
+                    Setup Guide
+                </a>
+                <a class="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-secondary text-on-secondary font-label-md text-label-md font-semibold hover:bg-secondary/90 transition-colors shadow-sm" href="{{ route('contact') }}">
+                    <span class="material-symbols-outlined text-[16px]">support_agent</span>
+                    Get Support
                 </a>
             </div>
-        </section>
+        </aside>
     @endif
 </div>
+
+@if(!$items->isEmpty())
+<script>
+(function() {
+    var filterBtns = document.querySelectorAll('.library-filter-btn');
+    var searchInput = document.getElementById('library-search');
+    var bookCards = document.querySelectorAll('.ebook-item');
+    var currentCategory = 'all';
+    var currentQuery = '';
+
+    function applyFilters() {
+        bookCards.forEach(function(card) {
+            var category = card.getAttribute('data-category');
+            var title = card.getAttribute('data-title') || '';
+            var categoryMatch = (currentCategory === 'all' || category === currentCategory);
+            var searchMatch = !currentQuery || title.indexOf(currentQuery.toLowerCase()) !== -1;
+            card.style.display = (categoryMatch && searchMatch) ? '' : 'none';
+        });
+    }
+
+    filterBtns.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            filterBtns.forEach(function(b) {
+                b.classList.remove('bg-secondary', 'text-on-secondary');
+                b.classList.add('bg-surface-container-lowest', 'text-on-surface-variant');
+                b.setAttribute('aria-selected', 'false');
+            });
+            btn.classList.add('bg-secondary', 'text-on-secondary');
+            btn.classList.remove('bg-surface-container-lowest', 'text-on-surface-variant');
+            btn.setAttribute('aria-selected', 'true');
+            currentCategory = btn.getAttribute('data-filter');
+            applyFilters();
+        });
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function(e) {
+            currentQuery = e.target.value.trim();
+            applyFilters();
+        });
+    }
+})();
+</script>
+@endif
 @endsection

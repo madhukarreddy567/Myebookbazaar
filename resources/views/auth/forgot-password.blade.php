@@ -1,48 +1,62 @@
-@extends('layouts.app')
+{{-- Password reset request — Stitch auth design language. --}}
+@extends('layouts.stitch')
 
 @section('robots', 'noindex,nofollow')
 
-@section('title', 'Forgot password — MyEbookBazaar')
+@section('title', 'Forgot Password — MyEbookBazaar')
 
 @section('content')
-<div class="max-w-md mx-auto px-4 py-12">
-    <div class="st-auth-card">
-        <div class="text-center">
-            <img src="{{ asset('images/stitch/logo.jpg') }}" alt="MyEbookBazaar" class="w-12 h-12 rounded-2xl object-cover mx-auto mb-3 shadow-sm">
-            <h1 class="st-h text-[28px]">Reset password</h1>
-            <p class="st-muted text-sm mt-1">Enter your email and we will send you a reset link.</p>
+<div class="st-page w-full bg-surface py-10 px-4 sm:px-6">
+    <div class="w-full max-w-[420px] mx-auto bg-surface-container-lowest rounded-[16px] shadow-sm p-6 sm:p-8">
+        <div class="mb-6 text-center">
+            <div class="w-12 h-12 rounded-full bg-primary-fixed/60 text-primary flex items-center justify-center mx-auto mb-4">
+                <span class="material-symbols-outlined text-[24px]">lock_reset</span>
+            </div>
+            <h1 class="font-headline-sm text-headline-sm text-on-surface">Reset your password</h1>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Enter your email and we&rsquo;ll send you a secure reset link.</p>
         </div>
 
         @if(session('status'))
-            <div class="st-security-box !bg-[#E9F7EE] !border-[#BFE6CC] mt-5">
-                <x-ui.icon name="check-circle" class="w-5 h-5 text-[#1E8E5A] shrink-0" />
-                <p class="text-sm">{{ session('status') }}</p>
-            </div>
+        <div class="flex items-start gap-2.5 bg-surface-container-low border border-outline-variant/40 rounded-DEFAULT p-3.5 mb-4" role="status">
+            <span class="material-symbols-outlined text-[18px] text-tertiary shrink-0 mt-0.5">check_circle</span>
+            <p class="font-body-sm text-body-sm text-on-surface">{{ session('status') }}</p>
+        </div>
         @endif
 
-        <form method="POST" action="{{ route('password.email') }}" class="mt-6 flex flex-col gap-4">
+        <form method="POST" action="{{ route('password.email') }}" class="space-y-4">
             @csrf
-            <div>
-                <label class="st-label" for="email">Email</label>
-                <div class="st-input-wrap">
-                    <x-ui.icon name="mail" class="st-input-icon" />
-                    <input id="email" name="email" type="email" class="st-input has-icon"
-                           placeholder="you@domain.com" value="{{ old('email') }}"
-                           required autocomplete="email" autofocus>
-                </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="email">Email Address</label>
+                <input class="w-full h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                       id="email" name="email" type="email" placeholder="name@example.com"
+                       value="{{ old('email') }}" required autocomplete="email" autofocus
+                       @if($errors->first('email')) aria-invalid="true" @endif>
                 @if($errors->first('email'))
-                <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('email') }}</span></p>
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('email') }}</span>
+                </p>
                 @endif
             </div>
 
             <x-turnstile form="forgot" />
 
-            <button type="submit" class="st-btn st-btn-teal w-full !text-[16px]">Send reset link</button>
+            <div class="pt-2">
+                <button type="submit"
+                        class="w-full h-12 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-[0.99] shadow-sm flex items-center justify-center gap-2">
+                    <span>Send Reset Link</span>
+                    <span class="material-symbols-outlined text-[18px]">mail</span>
+                </button>
+            </div>
         </form>
 
-        <p class="text-sm text-center st-muted mt-5">
-            <a href="{{ route('login') }}" class="text-[#0B3D4A] font-bold hover:underline underline-offset-4">Back to login</a>
-        </p>
+        <div class="mt-6 pt-5 text-center bg-surface-container-low/40 rounded-DEFAULT p-3">
+            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                Remembered it?
+                <a class="text-tertiary font-medium hover:underline ml-1" href="{{ route('login') }}">Back to log in</a>
+            </p>
+        </div>
     </div>
 </div>
 @endsection

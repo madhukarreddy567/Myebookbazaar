@@ -1,141 +1,242 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('robots', 'noindex,nofollow')
 
 @section('title', 'Your cart — MyEbookBazaar')
 
 @section('content')
-<div class="max-w-container mx-auto px-4 pt-6 pb-10">
-    <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'Your cart']]" />
-    <h1 class="st-h text-[34px] md:text-[42px] mt-3">
-        Your cart
-        @if($items->isNotEmpty())
-            <span class="st-badge-free align-middle ml-1">{{ $items->count() }} {{ Str::plural('item', $items->count()) }}</span>
-        @endif
-    </h1>
+<div class="st-page w-full pb-16">
+    <div class="max-w-[1120px] mx-auto px-4 sm:px-6 py-6">
 
-    @if(session('status'))
-        <x-ui.alert type="success" class="mt-4">{{ session('status') }}</x-ui.alert>
-    @endif
-
-    @if($items->isEmpty())
-        <div class="st-card st-empty mt-5">
-            <x-ui.empty-state icon="cart" title="Your cart is empty"
-                text="Browse ebooks and add your first title."
-                :action-url="route('books')" action-label="Browse ebooks" />
-        </div>
-    @else
-        <div class="grid lg:grid-cols-[1.6fr_1fr] gap-5 mt-5 items-start">
-            {{-- Items --}}
-            <div class="flex flex-col gap-3">
-                @foreach($items as $row)
-                @php($rowCover = $row->book->displayCoverUrl())
-                <div class="st-card p-4 flex gap-4 items-center">
-                    <a href="{{ route('books.show', $row->book->slug) }}" class="w-16 shrink-0" tabindex="-1" aria-hidden="true">
-                        @if($rowCover)
-                            <img src="{{ $rowCover }}" alt="" class="rounded-lg w-full h-auto" loading="lazy">
-                        @else
-                            <div class="book-cover-placeholder aspect-[3/4] rounded-lg" role="img" aria-label="Cover coming soon">
-                                <span class="text-xs">{{ $row->book->title }}</span>
-                            </div>
-                        @endif
-                    </a>
-                    <div class="flex-1 min-w-0">
-                        <a href="{{ route('books.show', $row->book->slug) }}" class="font-bold text-[17px] hover:underline line-clamp-2">{{ $row->book->title }}</a>
-                        <p class="text-sm st-muted mt-0.5">Digital PDF ebook &bull; Lifetime access</p>
-                        <form method="POST" action="{{ route('cart.destroy', $row) }}" class="mt-1.5"
-                              onsubmit="return confirm('Remove this ebook from your cart?')">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="text-sm font-semibold text-[#B3372F] underline underline-offset-2">Remove</button>
-                        </form>
-                    </div>
-                    <p class="text-xl shrink-0 font-extrabold text-right text-[#0B3D4A]">
-                        {{ $row->price_display }}
-                        @if($row->price_regular_display)
-                            <span class="book-card-oldprice block text-sm font-semibold">{{ $row->price_regular_display }}</span>
-                        @endif
-                    </p>
+        {{-- Heading --}}
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container font-label-sm text-label-sm uppercase tracking-wider mb-2">
+                    <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                    Cart Review
+                    @if($items->isNotEmpty())
+                        ({{ $items->count() }} {{ Str::plural('Item', $items->count()) }})
+                    @endif
                 </div>
-                @endforeach
-                <a href="{{ route('books') }}" class="inline-flex items-center gap-1.5 text-sm font-bold text-[#0B3D4A] hover:underline mt-1">
-                    <x-ui.icon name="arrow-right" class="w-4 h-4 rotate-180" /> Continue browsing
+                <h1 class="font-headline-lg text-headline-lg text-on-surface tracking-tight">Your Digital Library Basket</h1>
+            </div>
+            <a class="inline-flex items-center gap-1.5 font-label-md text-label-md text-secondary hover:text-primary transition-colors" href="{{ route('books') }}">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Continue shopping
+            </a>
+        </div>
+
+        @if($items->isEmpty())
+            {{-- Empty state --}}
+            <div class="bg-surface-container-lowest rounded-DEFAULT p-10 shadow-sm text-center flex flex-col items-center justify-center">
+                <div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center text-secondary mb-4">
+                    <span class="material-symbols-outlined text-[32px]">menu_book</span>
+                </div>
+                <h3 class="font-headline-sm text-headline-sm text-on-surface mb-2">Your basket is empty</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-sm mb-6">Discover practical guides for home fitness, cooking, and everyday skills.</p>
+                <a class="inline-flex items-center justify-center h-11 px-6 rounded-full bg-primary-container text-on-primary font-label-md text-label-md font-semibold hover:bg-primary transition-all" href="{{ route('books') }}">
+                    Browse Catalog
                 </a>
             </div>
+        @else
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            {{-- Summary --}}
-            <div class="st-card p-5 lg:sticky lg:top-24">
-                <h2 class="st-h text-[22px]">Summary</h2>
-
-                {{-- Coupon: input is always empty; never pre-filled --}}
-                @auth
-                    @if($couponsEnabled && settings_enabled('features.checkout', true) && Route::has('checkout.coupon.apply'))
-                    <div class="mt-4">
-                        @if($couponCode)
-                            <div class="flex items-center justify-between gap-3 rounded-xl border border-[#E4E8F2] bg-[#F6F7FD] px-4 py-3">
-                                <p class="text-sm">
-                                    <span class="text-[10px] font-extrabold uppercase tracking-wider bg-[#0B3D4A] text-white rounded-md px-2 py-1">Coupon</span>
-                                    <strong class="ml-1">{{ $couponCode }}</strong>
-                                    <span class="st-muted">applied</span>
-                                </p>
-                                <form method="POST" action="{{ route('checkout.coupon.remove') }}">
+                {{-- Items --}}
+                <div class="lg:col-span-7 flex flex-col gap-6">
+                    @foreach($items as $row)
+                    <div class="bg-surface-container-lowest rounded-DEFAULT p-6 shadow-sm flex flex-col sm:flex-row gap-6 items-start sm:items-center relative">
+                        <div class="relative w-20 flex-shrink-0 aspect-[3/4] rounded-sm overflow-hidden bg-surface-container shadow-sm">
+                            @if($row->book->displayCoverUrl())
+                                <img src="{{ $row->book->displayCoverUrl() }}" alt="{{ $row->book->title }} cover" class="w-full h-full object-cover" loading="lazy">
+                            @else
+                                <span class="w-full h-full flex items-center justify-center text-center font-body-sm text-body-sm text-on-surface-variant p-2">{{ $row->book->title }}</span>
+                            @endif
+                            <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded-full bg-inverse-surface/80 text-inverse-on-surface font-label-sm text-[10px] uppercase font-bold tracking-wider backdrop-blur-sm">eBook</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <span class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-primary">Digital eBook</span>
+                                    <h2 class="font-headline-sm text-headline-sm text-on-surface truncate">
+                                        <a href="{{ route('books.show', $row->book->slug) }}" class="hover:underline">{{ $row->book->title }}</a>
+                                    </h2>
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 mt-1 mb-3">
+                                <span class="inline-flex items-center gap-1 text-on-surface-variant font-body-sm text-body-sm">
+                                    <span class="material-symbols-outlined text-[16px] text-tertiary">picture_as_pdf</span>
+                                    PDF format
+                                </span>
+                                <span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+                                <span class="text-on-surface-variant font-body-sm text-body-sm">Instant Download</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-4 pt-2">
+                                <div class="flex items-baseline gap-2">
+                                    <span class="font-headline-md text-headline-md text-on-surface">{{ $row->price_display }}</span>
+                                    @if($row->price_regular_display)
+                                        <span class="book-card-oldprice font-body-sm text-body-sm">{{ $row->price_regular_display }}</span>
+                                    @endif
+                                    @if($row->price_quote['discount_percent'] ?? null)
+                                        <span class="font-label-sm text-label-sm text-primary font-semibold px-2 py-0.5 rounded-full bg-primary-fixed/50">{{ $row->price_quote['discount_percent'] }}% OFF</span>
+                                    @endif
+                                </div>
+                                <form method="POST" action="{{ route('cart.destroy', $row) }}"
+                                      onsubmit="return confirm('Remove this ebook from your cart?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-sm font-medium text-[#0B3D4A] underline hover:text-[#101E28]">Remove</button>
+                                    <button class="font-body-sm text-body-sm text-on-surface-variant hover:text-error transition-colors flex items-center gap-1" type="submit">
+                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                        <span>Remove</span>
+                                    </button>
                                 </form>
                             </div>
-                        @else
-                            <form method="POST" action="{{ route('checkout.coupon.apply') }}" class="flex gap-2">
-                                @csrf
-                                <x-ui.input name="code" placeholder="Coupon code" :value="old('code')" :error="$errors->first('coupon')" class="flex-1" aria-label="Coupon code" />
-                                <x-ui.button type="submit" variant="secondary">Apply</x-ui.button>
-                            </form>
-                            @if($errors->has('coupon'))
-                                <p class="st-field-error mt-1" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('coupon') }}</span></p>
-                            @endif
-                        @endif
-                    </div>
-                    @endif
-                @endauth
-
-                <dl class="mt-4 space-y-2 text-[15px]">
-                    @foreach($summary['lines'] as $line)
-                    <div class="flex justify-between gap-3">
-                        <dt class="st-muted line-clamp-1">{{ $line['title'] }}</dt>
-                        <dd class="shrink-0 font-semibold">{{ $line['display'] }}</dd>
+                        </div>
                     </div>
                     @endforeach
-                </dl>
-                <div class="border-t border-[#E4E8F2] mt-4 pt-4 flex justify-between items-baseline">
-                    <span class="font-bold">Total</span>
-                    <span class="st-h text-[30px]">{{ $summary['display_total'] }}</span>
-                </div>
-                <p class="text-xs st-muted mt-1.5">
-                    @if($summary['currency'] === 'INR')
-                        Charged in Indian rupees.
-                    @else
-                        Charged in US dollars.
-                    @endif
-                    All sales are final — <a href="{{ route('no-refund') }}" class="underline">no-refund policy</a>.
-                </p>
 
-                <div class="mt-5">
-                    @guest
-                        <a href="{{ route('login') }}" class="st-btn st-btn-amber w-full !min-h-[56px] !text-[16px]">Log in to check out</a>
-                        <p class="text-sm st-muted mt-2 text-center">You need an account before you can pay.</p>
-                    @else
-                        @if(settings_enabled('features.checkout', true) && Route::has('checkout'))
-                            <a href="{{ route('checkout') }}" class="st-btn st-btn-amber w-full !min-h-[56px] !text-[16px] uppercase tracking-wide">Proceed to checkout</a>
-                            <p class="flex items-center justify-center gap-1.5 mt-2.5 text-xs st-muted">
-                                <x-ui.icon name="lock" class="w-4 h-4" /> Secure checkout &bull; Instant access after payment
+                    {{-- Trust chips --}}
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-lowest shadow-sm">
+                            <span class="material-symbols-outlined text-tertiary text-[24px]">bolt</span>
+                            <div class="min-w-0">
+                                <p class="font-label-md text-label-md font-semibold text-on-surface">Zero Wait</p>
+                                <p class="font-body-sm text-[12px] text-on-surface-variant truncate">Instant cloud access</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-lowest shadow-sm">
+                            <span class="material-symbols-outlined text-tertiary text-[24px]">devices</span>
+                            <div class="min-w-0">
+                                <p class="font-label-md text-label-md font-semibold text-on-surface">Any Device</p>
+                                <p class="font-body-sm text-[12px] text-on-surface-variant truncate">Kindle, phone, or laptop</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 p-4 rounded-xl bg-surface-container-lowest shadow-sm">
+                            <span class="material-symbols-outlined text-tertiary text-[24px]">all_inclusive</span>
+                            <div class="min-w-0">
+                                <p class="font-label-md text-label-md font-semibold text-on-surface">Lifetime Link</p>
+                                <p class="font-body-sm text-[12px] text-on-surface-variant truncate">Re-download anytime</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Summary --}}
+                <div class="lg:col-span-5 flex flex-col gap-4 lg:sticky lg:top-24">
+                    <div class="bg-surface-container-lowest rounded-DEFAULT p-6 sm:p-7 shadow-sm">
+                        <h2 class="font-headline-md text-headline-md text-on-surface mb-6">Order Summary</h2>
+
+                        <div class="space-y-3.5 pb-6 border-b border-surface-container-high">
+                            @foreach($summary['lines'] as $line)
+                            <div class="flex items-center justify-between font-body-md text-body-md text-on-surface-variant">
+                                <span class="truncate mr-3">{{ $line['title'] }}</span>
+                                <span class="font-medium text-on-surface shrink-0">{{ $line['display'] }}</span>
+                            </div>
+                            @endforeach
+                        </div>
+
+                        <div class="py-4 flex items-baseline justify-between">
+                            <span class="font-headline-sm text-headline-sm text-on-surface">Total Amount</span>
+                            <div class="text-right">
+                                <span class="font-display-lg text-[32px] leading-tight text-on-surface font-bold">{{ $summary['display_total'] }}</span>
+                            </div>
+                        </div>
+
+                        {{-- Coupon --}}
+                        @auth
+                            @if($couponsEnabled && settings_enabled('features.checkout', true) && Route::has('checkout.coupon.apply'))
+                            <div class="mt-4 mb-6">
+                                @if($couponCode)
+                                    <div class="flex items-center justify-between gap-3 rounded-xl bg-surface-container-low px-4 py-3">
+                                        <p class="font-body-sm text-body-sm text-on-surface">
+                                            <span class="inline-flex items-center gap-1.5 font-label-sm text-label-sm text-primary font-medium">
+                                                <span class="material-symbols-outlined text-[18px]">verified</span>
+                                                Coupon <strong class="font-semibold uppercase tracking-wider">{{ $couponCode }}</strong>
+                                            </span>
+                                            <span class="text-on-surface-variant"> applied</span>
+                                        </p>
+                                        <form method="POST" action="{{ route('checkout.coupon.remove') }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="text-sm font-medium text-secondary underline hover:text-on-surface">Remove</button>
+                                        </form>
+                                    </div>
+                                @else
+                                    <label class="block font-label-sm text-label-sm uppercase font-semibold tracking-wider text-on-surface-variant mb-2" for="coupon-code">Have a promo code?</label>
+                                    <form method="POST" action="{{ route('checkout.coupon.apply') }}" class="flex gap-2">
+                                        @csrf
+                                        <div class="relative flex-1">
+                                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/60 text-[18px]">sell</span>
+                                            <input class="w-full h-11 pl-9 pr-3 rounded-full bg-surface-container-low font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary-container" id="coupon-code" name="code" value="{{ old('code') }}" placeholder="Enter coupon" type="text" aria-label="Coupon code">
+                                        </div>
+                                        <button class="h-11 px-5 rounded-full bg-surface-container text-on-surface hover:bg-secondary hover:text-on-secondary font-label-md text-label-md font-semibold transition-colors" type="submit">
+                                            Apply
+                                        </button>
+                                    </form>
+                                    @if($errors->has('coupon'))
+                                        <p class="font-body-sm text-body-sm text-error mt-2" role="alert">{{ $errors->first('coupon') }}</p>
+                                    @endif
+                                @endif
+                            </div>
+                            @endif
+                        @endauth
+
+                        <div class="mt-4">
+                            @guest
+                                <a href="{{ route('login') }}" class="w-full flex items-center justify-center gap-2 h-12 rounded-full bg-primary-container text-on-primary font-label-md text-body-md font-semibold hover:bg-primary transition-all active:scale-[0.99] shadow-md hover:shadow-lg">
+                                    Log in to check out
+                                </a>
+                                <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 text-center">You need an account before you can pay.</p>
+                            @else
+                                @if(settings_enabled('features.checkout', true) && Route::has('checkout'))
+                                    <a href="{{ route('checkout') }}" class="w-full flex items-center justify-center gap-2 h-12 rounded-full bg-primary-container text-on-primary font-label-md text-body-md font-semibold hover:bg-primary transition-all active:scale-[0.99] shadow-md hover:shadow-lg">
+                                        <span>Proceed to Checkout</span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-white/40"></span>
+                                        <span>{{ $summary['display_total'] }}</span>
+                                        <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+                                    </a>
+                                    <p class="font-body-sm text-body-sm text-on-surface-variant mt-2 text-center">
+                                        @if($summary['currency'] === 'INR')
+                                            Charged in Indian rupees.
+                                        @else
+                                            Charged in US dollars.
+                                        @endif
+                                        All sales are final — <a href="{{ route('no-refund') }}" class="underline">no-refund policy</a>.
+                                    </p>
+                                @else
+                                    <div class="rounded-DEFAULT bg-surface-container-low px-4 py-3 font-body-sm text-body-sm text-on-surface" role="status">Online checkout is being set up. Your cart is saved and ready.</div>
+                                @endif
+                            @endguest
+                        </div>
+
+                        <div class="mt-4 text-center">
+                            <p class="font-body-sm text-body-sm text-on-surface-variant flex items-center justify-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px] text-tertiary">cloud_done</span>
+                                Digital instant download. No shipping charges.
                             </p>
-                        @else
-                            <x-ui.alert type="info">Online checkout is being set up. Your cart is saved and ready.</x-ui.alert>
-                        @endif
-                    @endguest
+                        </div>
+
+                        <div class="mt-6 pt-5 bg-surface-container-low -mx-6 -mb-6 sm:-mx-7 sm:-mb-7 px-6 py-4 rounded-b-DEFAULT flex flex-col sm:flex-row items-center justify-between gap-3 text-on-surface-variant">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-[18px] text-secondary">lock</span>
+                                <span class="font-label-sm text-label-sm font-medium">256-bit SSL Encrypted</span>
+                            </div>
+                            <div class="flex items-center gap-1.5 font-label-sm text-label-sm">
+                                <span>Powered by</span>
+                                <span class="font-semibold text-on-surface tracking-tight bg-surface-container-lowest px-2 py-0.5 rounded-full shadow-xs">Razorpay</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-surface-container-lowest rounded-DEFAULT p-5 shadow-sm flex items-start gap-3.5">
+                        <span class="material-symbols-outlined text-primary text-[22px] flex-shrink-0 mt-0.5">verified_user</span>
+                        <div class="font-body-sm text-body-sm text-on-surface-variant">
+                            <p class="font-label-md text-label-md font-semibold text-on-surface mb-0.5">MyEbookBazaar Reader Promise</p>
+                            <p>Every purchase includes the DRM-free optimized mobile PDF delivered to your registered email in seconds.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
-        </div>
-    @endif
+        @endif
+    </div>
 </div>
 @endsection

@@ -1,247 +1,188 @@
-@extends('layouts.app')
+{{-- Customer registration — Stitch design: tabbed auth card, register tab active. --}}
+@extends('layouts.stitch')
 
 @section('robots', 'noindex,nofollow')
 
-@section('title', 'Create account — MyEbookBazaar')
+@section('title', 'Create Account — MyEbookBazaar')
 @section('meta_description', 'Create your free MyEbookBazaar account. Instant digital delivery of your purchased ebooks to your personal shelf.')
 
 @section('content')
-<div class="st-auth-shell">
-    <div class="grid lg:grid-cols-[1.5fr_1fr] gap-6 items-start">
-
-        {{-- LEFT: form card --}}
-        <div class="st-auth-card">
-            <p class="st-eyebrow">Begin your reading journey</p>
-            <h1 class="st-auth-title mt-2">Create your MyEbookBazaar Account</h1>
-            <p class="st-muted text-[15px] mt-3 leading-relaxed">
-                Join the bazaar — instant digital delivery directly to your personal shelf.
-                Free to create, yours to keep.
-            </p>
-
-            <div class="mt-6">
-                <x-ui.google-button label="Sign up with Google" divider="or register with email" :divider-after="true" />
-            </div>
-
-            <form method="POST" action="{{ route('register') }}" class="flex flex-col gap-5 mt-6">
-                @csrf
-
-                <div>
-                    <label class="st-label" for="name">Full Legal Name</label>
-                    <div class="st-input-wrap">
-                        <x-ui.icon name="user" class="st-input-icon" />
-                        <input id="name" name="name" type="text" class="st-input has-icon"
-                               placeholder="e.g. Maya Chen" value="{{ old('name') }}"
-                               required autocomplete="name" autofocus
-                               @if($errors->first('name')) aria-invalid="true" @endif>
-                    </div>
-                    @if($errors->first('name'))
-                    <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('name') }}</span></p>
-                    @endif
-                </div>
-
-                <div>
-                    <label class="st-label" for="email">
-                        Email Address
-                        <span class="st-hint"><span class="inline-flex items-center gap-1"><x-ui.icon name="zap" class="w-3.5 h-3.5" /> Instant download delivery</span></span>
-                    </label>
-                    <div class="st-input-wrap">
-                        <x-ui.icon name="mail" class="st-input-icon" />
-                        <input id="email" name="email" type="email" class="st-input has-icon"
-                               placeholder="you@domain.com" value="{{ old('email', request('email')) }}"
-                               required autocomplete="email"
-                               @if($errors->first('email')) aria-invalid="true" @endif>
-                    </div>
-                    <p class="st-field-note"><x-ui.icon name="info" class="w-4 h-4 shrink-0 mt-0.5" /><span>We&rsquo;ll send your order receipts, invoices and password resets here.</span></p>
-                    @if($errors->first('email'))
-                    <p class="st-field-error" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('email') }}</span></p>
-                    @endif
-                </div>
-
-                <div class="grid sm:grid-cols-2 gap-5" x-data="mebPwdStrength()">
-                    <div>
-                        <label class="st-label" for="password">Password</label>
-                        <div class="st-input-wrap">
-                            <x-ui.icon name="lock" class="st-input-icon" />
-                            <input id="password" name="password" type="password" x-bind:type="show ? 'text' : 'password'"
-                                   class="st-input has-icon has-trailing" placeholder="••••••••••••"
-                                   required autocomplete="new-password"
-                                   @input="update($event.target.value)"
-                                   @if($errors->first('password')) aria-invalid="true" @endif>
-                            <button type="button" class="st-eye" @click="show = !show" aria-label="Show or hide password">
-                                <x-ui.icon name="eye" x-show="!show" />
-                                <x-ui.icon name="eye-off" x-show="show" x-cloak />
-                            </button>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="st-label" for="password_confirmation">Confirm Password</label>
-                        <div class="st-input-wrap">
-                            <x-ui.icon name="lock" class="st-input-icon" />
-                            <input id="password_confirmation" name="password_confirmation" type="password"
-                                   class="st-input has-icon" placeholder="••••••••••••"
-                                   required autocomplete="new-password">
-                        </div>
-                    </div>
-                    <div class="sm:col-span-2 rounded-2xl bg-[#F6F8FC] border border-[#E4E8F2] p-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-[13px] font-bold text-[#18262E]">Security Strength</span>
-                            <span class="text-[13px] font-bold text-[#D97706]" x-text="labelText"></span>
-                        </div>
-                        <div class="st-strength-track">
-                            <div class="st-strength-bar" :class="barClass(1)"></div>
-                            <div class="st-strength-bar" :class="barClass(2)"></div>
-                            <div class="st-strength-bar" :class="barClass(3)"></div>
-                            <div class="st-strength-bar" :class="barClass(4)"></div>
-                        </div>
-                        <div class="flex flex-wrap gap-x-4 gap-y-1 mt-2.5 text-[12px] st-muted">
-                            <span class="inline-flex items-center gap-1"><x-ui.icon name="check-circle" class="w-3.5 h-3.5" /> 8+ characters</span>
-                            <span class="inline-flex items-center gap-1"><x-ui.icon name="check-circle" class="w-3.5 h-3.5" /> Mixed uppercase &amp; lowercase</span>
-                            <span class="inline-flex items-center gap-1"><x-ui.icon name="info" class="w-3.5 h-3.5" /> Includes number or symbol</span>
-                        </div>
-                    </div>
-                    @if($errors->first('password'))
-                    <p class="st-field-error sm:col-span-2 !mt-0" role="alert"><x-ui.icon name="alert" class="w-4 h-4" /><span>{{ $errors->first('password') }}</span></p>
-                    @endif
-                </div>
-
-                <div>
-                    <x-ui.country-select name="country_code" :countries="$countries"
-                                         label="Country &amp; Tax Jurisdiction" icon="globe" required
-                                         :value="old('country_code')"
-                                         hint="Your country sets your pricing region and cannot be changed later."
-                                         :error="$errors->first('country_code')" />
-                    <div class="rounded-2xl bg-[#EEF3FF] border border-[#E0E8FA] p-4 mt-3">
-                        <p class="text-sm font-extrabold text-[#0B3D4A] inline-flex items-center gap-2">
-                            <x-ui.icon name="globe" class="w-4 h-4" /> Pricing Region
-                        </p>
-                        <p class="text-sm st-muted mt-1">Localized INR pricing for India; USD pricing for international readers.</p>
-                        <p class="text-[13px] st-muted mt-2 flex gap-1.5">
-                            <x-ui.icon name="lock" class="w-4 h-4 shrink-0 mt-0.5" />
-                            <span>Country cannot be modified after registration (admin-only change) to keep your pricing region accurate.</span>
-                        </p>
-                    </div>
-                </div>
-
-                <div class="st-turnstile-box">
-                    <p class="flex items-center gap-2 text-sm font-extrabold text-[#0B3D4A]">
-                        <span class="w-8 h-8 rounded-full bg-[#0B3D4A] text-white inline-flex items-center justify-center shrink-0"><x-ui.icon name="check" class="w-4 h-4" /></span>
-                        Protected by Cloudflare Turnstile
-                        <span class="text-[11px] font-bold text-[#1E8E5A] bg-[#E3F4EA] rounded-full px-2.5 py-0.5">Verified</span>
-                    </p>
-                    <p class="text-[13px] st-muted mt-1.5 ml-10">Smart bot prevention • Privacy-first challenge</p>
-                    <x-turnstile />
-                </div>
-
-                <div class="st-terms-box">
-                    <label class="flex items-start gap-3 cursor-pointer select-none">
-                        <input type="checkbox" name="terms" value="1" required class="st-check">
-                        <span class="text-sm leading-snug flex-1">
-                            I agree to the
-                            <a href="{{ route('terms') }}" class="font-bold text-[#0B3D4A] underline underline-offset-2">Terms of Service</a>,
-                            <a href="{{ route('privacy') }}" class="font-bold text-[#0B3D4A] underline underline-offset-2">Privacy Policy</a>,
-                            and acknowledge that all digital ebook sales are final under our
-                            <a href="{{ route('no-refund') }}" class="font-bold text-[#0B3D4A] underline underline-offset-2">No-Refund Policy</a>.
-                        </span>
-                    </label>
-                </div>
-
-                <x-security.honeypot />
-
-                <div>
-                    <button type="submit" class="st-btn st-btn-teal w-full !text-[17px]">
-                        Create My Account &amp; Start Reading <x-ui.icon name="arrow-right" class="w-5 h-5" />
-                    </button>
-                    <p class="text-center text-[13px] st-muted mt-3 inline-flex items-center justify-center gap-1.5 w-full">
-                        <x-ui.icon name="lock" class="w-4 h-4" />
-                        Protected with bot checks &amp; encryption &nbsp;•&nbsp; Max 5 registration attempts/min
-                    </p>
-                </div>
-            </form>
-
-            <p class="text-center text-sm st-muted mt-6 pt-5 border-t border-[#E4E8F2]">
-                Already part of the bazaar?
-                <a href="{{ route('login') }}" class="font-extrabold text-[#0B3D4A] underline underline-offset-4 ml-1">Log In</a>
-            </p>
+<div class="st-page w-full bg-surface py-10 px-4 sm:px-6">
+    <div class="w-full max-w-[420px] mx-auto bg-surface-container-lowest rounded-[16px] shadow-sm p-6 sm:p-8">
+        {{-- Top pill segmented switch: register tab active here --}}
+        <div class="bg-surface-container p-1 rounded-full flex items-center justify-between mb-8">
+            <a href="{{ route('login') }}" class="flex-1 py-2 text-center rounded-full font-label-md text-label-md font-medium text-on-surface-variant hover:text-on-surface transition-all duration-200">
+                Log In
+            </a>
+            <span class="flex-1 py-2 text-center rounded-full font-label-md text-label-md font-semibold bg-surface-container-lowest text-on-surface shadow-sm" aria-current="page">
+                Create Account
+            </span>
         </div>
 
-        {{-- RIGHT: member advantages (real benefits only) --}}
-        <aside class="flex flex-col gap-5">
-            <div class="st-sidepanel p-7">
-                <p class="st-eyebrow">Member advantages</p>
-                <h2 class="st-h text-[26px] mt-2">Why register with MyEbookBazaar?</h2>
-                <div class="flex flex-col gap-5 mt-6">
-                    <div class="st-adv-item">
-                        <span class="st-adv-icon"><x-ui.icon name="zap" /></span>
-                        <div>
-                            <p class="font-extrabold text-[15px]">Instant Delivery</p>
-                            <p class="text-sm st-muted mt-1 leading-relaxed">Direct access to DRM-free PDFs right after successful payment.</p>
-                        </div>
-                    </div>
-                    <div class="st-adv-item">
-                        <span class="st-adv-icon"><x-ui.icon name="download" /></span>
-                        <div>
-                            <p class="font-extrabold text-[15px]">Re-downloads</p>
-                            <p class="text-sm st-muted mt-1 leading-relaxed">Download any purchased ebook again at no extra fee — {{ settings('downloads.limit', 5) }} downloads per book, lifetime library access.</p>
-                        </div>
-                    </div>
-                    <div class="st-adv-item">
-                        <span class="st-adv-icon"><x-ui.icon name="tag" /></span>
-                        <div>
-                            <p class="font-extrabold text-[15px]">Tailored Regional Pricing</p>
-                            <p class="text-sm st-muted mt-1 leading-relaxed">INR pricing for India, USD for international readers — charged via secure Razorpay checkout.</p>
-                        </div>
-                    </div>
-                    <div class="st-adv-item">
-                        <span class="st-adv-icon"><x-ui.icon name="shield" /></span>
-                        <div>
-                            <p class="font-extrabold text-[15px]">Verified &amp; Private</p>
-                            <p class="text-sm st-muted mt-1 leading-relaxed">Zero spam. We never sell your data — card details are handled securely by Razorpay and never touch our servers.</p>
-                        </div>
-                    </div>
-                </div>
+        {{-- Header context --}}
+        <div class="mb-6 text-center">
+            <h1 class="font-headline-sm text-headline-sm text-on-surface">Create your MyEbookBazaar Account</h1>
+            <p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Start reading digital editions immediately</p>
+        </div>
+
+        {{-- Social auth CTA (renders only when Google OAuth is configured) --}}
+        <x-ui.google-button label="Sign up with Google" divider="or register with email" :divider-after="true" />
+
+        {{-- Form --}}
+        <form method="POST" action="{{ route('register') }}" class="space-y-4" x-data="{ show: false }" id="register-form">
+            @csrf
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="name">Full Name</label>
+                <input class="w-full h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                       id="name" name="name" type="text" placeholder="Ananya Sharma"
+                       value="{{ old('name') }}" required autocomplete="name" autofocus
+                       @if($errors->first('name')) aria-invalid="true" @endif>
+                @if($errors->first('name'))
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('name') }}</span>
+                </p>
+                @endif
             </div>
 
-            <a href="{{ route('contact') }}" class="st-card p-5 flex items-center justify-between gap-3 hover:border-[#0B3D4A] transition-colors">
-                <span class="inline-flex items-center gap-2.5 font-bold text-[15px]">
-                    <x-ui.icon name="info" class="w-5 h-5 text-[#0B3D4A]" /> Need bulk or team licensing?
-                </span>
-                <span class="text-sm font-extrabold text-[#0B3D4A] inline-flex items-center gap-1 whitespace-nowrap">Contact Sales <x-ui.icon name="arrow-right" class="w-4 h-4" /></span>
-            </a>
-        </aside>
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="email">Email Address</label>
+                <input class="w-full h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                       id="email" name="email" type="email" placeholder="name@example.com"
+                       value="{{ old('email', request('email')) }}" required autocomplete="email"
+                       @if($errors->first('email')) aria-invalid="true" @endif>
+                @if($errors->first('email'))
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('email') }}</span>
+                </p>
+                @endif
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="password">Password</label>
+                <div class="relative">
+                    <input class="w-full h-12 px-4 pr-11 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                           id="password" name="password" placeholder="••••••••"
+                           x-bind:type="show ? 'text' : 'password'"
+                           oninput="validatePassword(this.value)"
+                           required autocomplete="new-password"
+                           @if($errors->first('password')) aria-invalid="true" @endif>
+                    <button type="button" aria-label="Show or hide password" @click="show = !show"
+                            class="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface transition-colors p-1">
+                        <span class="material-symbols-outlined text-[20px]" x-show="!show">visibility</span>
+                        <span class="material-symbols-outlined text-[20px]" x-show="show" x-cloak>visibility_off</span>
+                    </button>
+                </div>
+                {{-- Password checklist (Stitch design) --}}
+                <div class="flex flex-col gap-1 pt-1.5 pb-1" id="password-checklist">
+                    <div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant" id="rule-length">
+                        <span class="material-symbols-outlined text-[15px] text-outline">check_circle</span>
+                        <span>At least 8 characters</span>
+                    </div>
+                    <div class="flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant" id="rule-symbol">
+                        <span class="material-symbols-outlined text-[15px] text-outline">check_circle</span>
+                        <span>Includes a number or symbol</span>
+                    </div>
+                </div>
+                @if($errors->first('password'))
+                <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error mt-1" role="alert">
+                    <span class="material-symbols-outlined text-[16px]">error</span>
+                    <span>{{ $errors->first('password') }}</span>
+                </p>
+                @endif
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="password_confirmation">Confirm Password</label>
+                <input class="w-full h-12 px-4 rounded-DEFAULT bg-surface-container-low text-on-surface placeholder:text-on-surface-variant/50 font-body-md text-body-md focus:bg-surface-container-lowest focus:outline-none focus:ring-2 focus:ring-primary-container transition-all"
+                       id="password_confirmation" name="password_confirmation" type="password"
+                       placeholder="••••••••" required autocomplete="new-password">
+            </div>
+
+            <div class="flex flex-col gap-1.5">
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="country_code_search">Country</label>
+                <x-ui.country-select name="country_code" :countries="$countries"
+                                     :label="null" required
+                                     :value="old('country_code')"
+                                     :error="$errors->first('country_code')" />
+                <p class="font-label-sm text-label-sm text-secondary flex items-start gap-1 mt-0.5">
+                    <span class="material-symbols-outlined text-[14px] flex-shrink-0 mt-0.5">info</span>
+                    <span>Your country sets your price and cannot be changed later.</span>
+                </p>
+            </div>
+
+            <div class="flex items-start gap-2.5 pt-1">
+                <input type="checkbox" name="terms" value="1" id="terms" required
+                       class="w-4 h-4 mt-0.5 rounded accent-primary-container cursor-pointer shrink-0"
+                       @if($errors->first('terms')) aria-invalid="true" @endif>
+                <label class="font-body-sm text-body-sm text-on-surface-variant select-none cursor-pointer" for="terms">
+                    I agree to the
+                    <a href="{{ route('terms') }}" class="text-tertiary font-medium hover:underline">Terms of Service</a>,
+                    <a href="{{ route('privacy') }}" class="text-tertiary font-medium hover:underline">Privacy Policy</a>,
+                    and acknowledge that all digital ebook sales are final under our
+                    <a href="{{ route('no-refund') }}" class="text-tertiary font-medium hover:underline">No-Refund Policy</a>.
+                </label>
+            </div>
+            @if($errors->first('terms'))
+            <p class="flex items-center gap-1.5 font-label-sm text-label-sm text-error" role="alert">
+                <span class="material-symbols-outlined text-[16px]">error</span>
+                <span>{{ $errors->first('terms') }}</span>
+            </p>
+            @endif
+
+            <x-security.honeypot />
+
+            <div class="flex items-start gap-2.5 bg-surface-container-low/60 rounded-DEFAULT p-3.5">
+                <span class="material-symbols-outlined text-[18px] text-tertiary shrink-0 mt-0.5">shield</span>
+                <p class="font-body-sm text-body-sm text-on-surface-variant leading-relaxed">
+                    Protected by Cloudflare Turnstile. Smart bot prevention active — your details stay private.
+                </p>
+            </div>
+
+            <x-turnstile />
+
+            <div class="pt-2">
+                <button type="submit"
+                        class="w-full h-12 rounded-full bg-primary-container hover:bg-primary text-on-primary font-label-md text-label-md font-semibold transition-all active:scale-[0.99] shadow-sm flex items-center justify-center gap-2">
+                    <span>Create Account</span>
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
+            </div>
+        </form>
+
+        {{-- Bottom contextual action --}}
+        <div class="mt-6 pt-5 text-center bg-surface-container-low/40 rounded-DEFAULT p-3">
+            <p class="font-body-sm text-body-sm text-on-surface-variant">
+                Already have an account?
+                <a class="text-tertiary font-medium hover:underline ml-1" href="{{ route('login') }}">Log in</a>
+            </p>
+        </div>
     </div>
 </div>
-@endsection
 
 @push('scripts')
 <script>
-function mebPwdStrength() {
-    return {
-        show: false,
-        score: -1,
-        update(v) {
-            if (!v) { this.score = -1; return; }
-            let s = 0;
-            if (v.length >= 8) s++;
-            if (/[a-z]/.test(v) && /[A-Z]/.test(v)) s++;
-            if (/[0-9]/.test(v)) s++;
-            if (/[^A-Za-z0-9]/.test(v)) s++;
-            this.score = s;
-        },
-        get labelText() {
-            if (this.score < 0) return 'Enter password';
-            if (this.score <= 1) return 'Weak';
-            if (this.score === 2) return 'Fair';
-            if (this.score === 3) return 'Good';
-            return 'Strong';
-        },
-        barClass(i) {
-            if (this.score < 0 || i > Math.max(this.score, 1)) return '';
-            if (this.score <= 1) return 'on-weak';
-            if (this.score === 2) return 'on-fair';
-            if (this.score === 3) return 'on-good';
-            return 'on-strong';
-        }
-    };
+function validatePassword(val) {
+    var ruleLen = document.getElementById('rule-length');
+    var ruleSym = document.getElementById('rule-symbol');
+    if (!ruleLen || !ruleSym) return;
+    updateRule(ruleLen, val.length >= 8);
+    updateRule(ruleSym, /[0-9!@#$%^&*(),.?":{}|<>]/.test(val));
+}
+function updateRule(element, isValid) {
+    var icon = element.querySelector('span:first-child');
+    if (isValid) {
+        element.className = 'flex items-center gap-2 font-label-sm text-label-sm text-tertiary';
+        icon.className = 'material-symbols-outlined text-[15px] text-tertiary';
+        icon.style.fontVariationSettings = "'FILL' 1";
+    } else {
+        element.className = 'flex items-center gap-2 font-label-sm text-label-sm text-on-surface-variant';
+        icon.className = 'material-symbols-outlined text-[15px] text-outline';
+        icon.style.fontVariationSettings = "'FILL' 0";
+    }
 }
 </script>
 @endpush
+@endsection

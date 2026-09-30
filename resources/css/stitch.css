@@ -1,0 +1,41 @@
+/**
+ * Stitch "myEbookBazaar frontend design" polyfills (v1.0.1 customer UI).
+ *
+ * 1. `.rounded-DEFAULT` — the Stitch export uses this literal class name.
+ *    Tailwind maps `borderRadius.DEFAULT` to the bare `rounded` utility, so
+ *    the literal `rounded-DEFAULT` class needs this manual definition.
+ * 2. Material Symbols Outlined — icon font used across all Stitch screens.
+ * 3. Small Stitch-specific helpers (scrollbar hiding matches the export).
+ */
+
+/* Stitch export emits `rounded-DEFAULT` literally (209 usages). */
+.rounded-DEFAULT {
+    border-radius: 1rem;
+}
+
+/* Material Symbols Outlined base — the font itself loads via Google Fonts
+   <link> in layouts/stitch.blade.php (allowed by the CSP font-src). */
+.material-symbols-outlined {
+    font-family: 'Material Symbols Outlined', sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'liga';
+    user-select: none;
+}
+
+/* Stitch export hides scrollbars globally. */
+.stitch-shell ::-webkit-scrollbar {
+    display: none;
+}
+.stitch-shell {
+    scrollbar-width: none;
+}

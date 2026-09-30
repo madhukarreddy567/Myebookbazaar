@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.stitch')
 
 @section('title', $combo->title.' — MyEbookBazaar')
 @section('meta_description', $combo->title.' — a bundle of '.($combo->combo_books->count()).' ebooks at one price.')
@@ -14,7 +14,7 @@
 @endsection
 
 @section('content')
-<div class="max-w-container mx-auto px-4 pt-6 pb-10">
+<div class="st-page max-w-container mx-auto px-4 pt-6 pb-10">
     <x-ui.breadcrumbs :items="[['label' => 'Home', 'url' => route('home')], ['label' => 'Combos', 'url' => route('combos')], ['label' => $combo->title]]" />
 
     <div class="grid lg:grid-cols-[1fr_1.5fr] gap-6 lg:gap-8 mt-6">
