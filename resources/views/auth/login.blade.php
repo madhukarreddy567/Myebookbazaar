@@ -52,7 +52,7 @@
                         <label class="st-label" for="password">Password <span class="st-hint">Case-sensitive</span></label>
                         <div class="st-input-wrap">
                             <x-ui.icon name="lock" class="st-input-icon" />
-                            <input id="password" name="password" :type="show ? 'text' : 'password'"
+                            <input id="password" name="password" type="password" x-bind:type="show ? 'text' : 'password'"
                                    class="st-input has-icon has-trailing" placeholder="••••••••••••"
                                    required autocomplete="current-password"
                                    @if($errors->first('password')) aria-invalid="true" @endif>
@@ -178,7 +178,7 @@
 
             @if($spotlight ?? null)
             <a href="{{ route('books.show', $spotlight->slug) }}" class="st-card p-5 flex gap-4 items-center hover:border-[#0B3D4A] transition-colors">
-                @php($spotCover = $spotlight->coverUrl() ?: (str_contains($spotlight->slug, 'fit-at-home') ? asset('images/stitch/book-mockup-3d.jpg') : null))
+                @php($spotCover = $spotlight->displayCoverUrl())
                 @if($spotCover)
                 <img src="{{ $spotCover }}" alt="" class="w-16 rounded-lg shadow-md shrink-0" loading="lazy">
                 @endif
