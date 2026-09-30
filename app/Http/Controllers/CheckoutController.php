@@ -542,7 +542,25 @@ class CheckoutController extends Controller
             $data['description'] ?? 'Payment failed at the gateway.'
         );
 
-        return response()->json(['message' => 'Payment failed. You can try again from your cart.']);
+        return response()->json([
+            'message' => 'Payment failed. You can try again.',
+            'redirect' => route('checkout.payment-failed', $payment->order),
+        ]);
+    }
+
+    /**
+     * Payment-failure landing page. Only the buyer, only for orders that
+     * genuinely failed (never a fabricated failure state). Reached from
+     * checkout.js after Razorpay's payment.failed event is recorded.
+     */
+    public function paymentFailed(Order $order): View|RedirectResponse
+    {
+        abort_unless($order->user_id === auth()->id(), 404);
+        abort_unless($order->isFailed(), 404);
+
+        $order->load('items.book', 'user');
+
+        return view('checkout.thankyou', ['order' => $order, 'paymentFailed' => true]);
     }
 
     /**

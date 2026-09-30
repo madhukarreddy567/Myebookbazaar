@@ -336,7 +336,7 @@
                 });
                 rzp.on('payment.failed', async function (resp) {
                     try {
-                        await fetch(data.failure_url, {
+                        const r = await fetch(data.failure_url, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
@@ -348,10 +348,16 @@
                                 description: (resp.error && resp.error.description) || 'Payment failed at the gateway.',
                             }),
                         });
-                    } finally {
-                        self.busy = false;
-                        self.error = 'The payment failed. No money was taken — you can try again.';
+                        const rd = await r.json();
+                        if (rd.redirect) {
+                            window.location.href = rd.redirect;
+                            return;
+                        }
+                    } catch (e) {
+                        // Fall through to the inline error below.
                     }
+                    self.busy = false;
+                    self.error = 'The payment failed. No money was taken — you can try again.';
                 });
                 rzp.open();
             },

@@ -5,7 +5,7 @@
 @section('title', 'Thank you — MyEbookBazaar')
 
 @php
-$paymentFailed = (bool) session('payment_failed');
+$paymentFailed = ($paymentFailed ?? false) || (bool) session('payment_failed');
 $maskedEmail = preg_replace('/^(.).*(@.*)$/', '$1***$2', (string) $order->user->email);
 $firstDownloadUrl = null;
 foreach ($order->items as $it) {

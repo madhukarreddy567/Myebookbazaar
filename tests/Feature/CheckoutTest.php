@@ -628,4 +628,110 @@ class CheckoutTest extends TestCase
         $this->actingAs($user)->get(route('reddy.orders.index'))
             ->assertRedirect();
     }
+
+    // ------------------------------------------------------------------
+    // Payment-failure landing page
+    // ------------------------------------------------------------------
+
+    protected function makeFailedOrder(User $user, Book $book): Order
+    {
+        $order = Order::create([
+            'user_id' => $user->id,
+            'order_number' => Order::generateNumber(),
+            'currency' => 'INR',
+            'subtotal' => 149,
+            'grand_total' => 149,
+            'status' => Order::STATUS_FAILED,
+            'payment_method' => 'razorpay',
+            'no_refund_accepted' => true,
+            'no_refund_accepted_at' => now(),
+        ]);
+        $order->items()->create([
+            'book_id' => $book->id,
+            'title' => $book->title,
+            'unit_price' => 149,
+            'quantity' => 1,
+            'line_total' => 149,
+            'currency' => 'INR',
+        ]);
+
+        return $order->fresh();
+    }
+
+    public function test_report_failure_marks_order_failed_and_returns_redirect(): void
+    {
+        $user = $this->makeUser();
+        $book = $this->makeBook();
+        $this->checkout($user, $book);
+
+        $order = Order::where('user_id', $user->id)->first();
+        $payment = Payment::where('order_id', $order->id)->first();
+
+        $response = $this->actingAs($user)->postJson('/checkout/report-failure', [
+            'razorpay_order_id' => $payment->razorpay_order_id,
+            'description' => 'UPI gateway timeout',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('redirect', route('checkout.payment-failed', $order));
+
+        $this->assertTrue($order->fresh()->isFailed());
+    }
+
+    public function test_payment_failed_page_renders_for_failed_order(): void
+    {
+        $user = $this->makeUser();
+        $book = $this->makeBook();
+        $order = $this->makeFailedOrder($user, $book);
+
+        $this->actingAs($user)->get(route('checkout.payment-failed', $order))
+            ->assertOk()
+            ->assertSee("Payment Didn't Go Through", false)
+            ->assertSee($order->order_number)
+            ->assertSee('Try Payment Again')
+            ->assertSee('Back to Cart');
+    }
+
+    public function test_payment_failed_page_404_for_paid_order(): void
+    {
+        $user = $this->makeUser();
+        $book = $this->makeBook();
+        $order = $this->makePaidOrder($user, $book);
+
+        $this->actingAs($user)->get(route('checkout.payment-failed', $order))
+            ->assertNotFound();
+    }
+
+    public function test_payment_failed_page_404_for_pending_order(): void
+    {
+        $user = $this->makeUser();
+        $book = $this->makeBook();
+        $this->checkout($user, $book);
+
+        $order = Order::where('user_id', $user->id)->first();
+
+        $this->actingAs($user)->get(route('checkout.payment-failed', $order))
+            ->assertNotFound();
+    }
+
+    public function test_payment_failed_page_404_for_other_users_order(): void
+    {
+        $owner = $this->makeUser();
+        $intruder = $this->makeUser();
+        $book = $this->makeBook();
+        $order = $this->makeFailedOrder($owner, $book);
+
+        $this->actingAs($intruder)->get(route('checkout.payment-failed', $order))
+            ->assertNotFound();
+    }
+
+    public function test_guest_cannot_open_payment_failed_page(): void
+    {
+        $user = $this->makeUser();
+        $book = $this->makeBook();
+        $order = $this->makeFailedOrder($user, $book);
+
+        $this->get(route('checkout.payment-failed', $order))
+            ->assertRedirect('/login');
+    }
 }

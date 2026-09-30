@@ -202,6 +202,9 @@ Route::middleware('customer')->group(function () {
     Route::get('/checkout/thank-you/{order}', [CheckoutController::class, 'thankyou'])
         ->middleware('verified.if.enabled')
         ->name('checkout.thankyou');
+    Route::get('/checkout/payment-failed/{order}', [CheckoutController::class, 'paymentFailed'])
+        ->middleware(['feature:features.checkout', 'verified.if.enabled'])
+        ->name('checkout.payment-failed');
 
     Route::get('/orders', [OrderController::class, 'index'])
         ->middleware('verified.if.enabled')
