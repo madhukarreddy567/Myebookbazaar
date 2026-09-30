@@ -1,1 +1,193 @@
-PD9waHAKCm5hbWVzcGFjZSBBcHBcSHR0cFxDb250cm9sbGVyczsKCnVzZSBBcHBcTW9kZWxzXEJvb2s7CnVzZSBBcHBcTW9kZWxzXENhdGVnb3J5Owp1c2UgQXBwXE1vZGVsc1xDb21ibzsKdXNlIElsbHVtaW5hdGVcU3VwcG9ydFxGYWNhZGVzXENhY2hlOwp1c2UgSWxsdW1pbmF0ZVxTdXBwb3J0XEZhY2FkZXNcTG9nOwp1c2UgVGhyb3dhYmxlOwoKLyoqCiAqIFNlcnZlcyAvc2l0ZW1hcC54bWwgKGR5bmFtaWMsIGNhY2hlZCkgYW5kIC9yb2JvdHMudHh0LgogKiBPbmx5IHB1YmxpYywgaW5kZXhhYmxlIHBhZ2VzIGFyZSBsaXN0ZWQ6IHRoZSBzdG9yZWZyb250LCBzdGF0aWMKICogY29udGVudCBwYWdlcywgYWN0aXZlIGJvb2tzIGFuZCBhY3RpdmUgY29tYm9zLiBDaGVja291dCwgYWNjb3VudCwKICogY2FydCBhbmQgYWRtaW4gcGFnZXMgYXJlIGludGVudGlvbmFsbHkgZXhjbHVkZWQuCiAqCiAqIEZhdWx0IGlzb2xhdGlvbjogZXZlcnkgVVJMIHNlY3Rpb24gaXMgYnVpbHQgaW5zaWRlIGl0cyBvd24KICogdHJ5L2NhdGNoLiBBIHNpdGVtYXAgaXMgY3Jhd2xlci1mYWNpbmcgaW5mcmFzdHJ1Y3R1cmUg4oCUIG9uZSBiYWQKICogcmVjb3JkIChvciBhIHRyYW5zaWVudCBmYWlsdXJlIGluIG9uZSBzZWN0aW9uKSBtdXN0IGRlZ3JhZGUgdG8KICogImZld2VyIFVSTHMiLCBuZXZlciB0byBhIDUwMCB0aGF0IHRlbGxzIHNlYXJjaCBlbmdpbmVzIHRoZSB3aG9sZQogKiBzaXRlIGlzIGJyb2tlbi4gRmFpbHVyZXMgYXJlIGxvZ2dlZCB3aXRoIGNvbnRleHQgc28gdGhleSBjYW4gYmUKICogZml4ZWQgaW5zdGVhZCBvZiBzaWxlbnRseSBpZ25vcmVkLgogKi8KY2xhc3MgU2l0ZW1hcENvbnRyb2xsZXIgZXh0ZW5kcyBDb250cm9sbGVyCnsKICAgIHB1YmxpYyBmdW5jdGlvbiBzaXRlbWFwKCkKICAgIHsKICAgICAgICAkeG1sID0gQ2FjaGU6OnJlbWVtYmVyKCdzaXRlbWFwLnhtbCcsIG5vdygpLT5hZGRIb3VyKCksIGZ1bmN0aW9uICgpIHsKICAgICAgICAgICAgJHVybHMgPSBbXTsKCiAgICAgICAgICAgICR0aGlzLT5hZGRTdGF0aWNVcmxzKCR1cmxzKTsKICAgICAgICAgICAgJHRoaXMtPmFkZEJvb2tVcmxzKCR1cmxzKTsKICAgICAgICAgICAgJHRoaXMtPmFkZENhdGVnb3J5VXJscygkdXJscyk7CiAgICAgICAgICAgICR0aGlzLT5hZGRDb21ib1VybHMoJHVybHMpOwoKICAgICAgICAgICAgcmV0dXJuIHZpZXcoJ3NpdGVtYXAnLCBbJ3VybHMnID0+ICR1cmxzXSktPnJlbmRlcigpOwogICAgICAgIH0pOwoKICAgICAgICByZXR1cm4gcmVzcG9uc2UoJHhtbCwgMjAwLCBbJ0NvbnRlbnQtVHlwZScgPT4gJ2FwcGxpY2F0aW9uL3htbCddKTsKICAgIH0KCiAgICBwdWJsaWMgZnVuY3Rpb24gcm9ib3RzKCkKICAgIHsKICAgICAgICAkY29udGVudCA9ICJVc2VyLWFnZW50OiAqXG5EaXNhbGxvdzpcblxuU2l0ZW1hcDogIi5yb3V0ZSgnc2l0ZW1hcCcpLiJcbiI7CgogICAgICAgIHJldHVybiByZXNwb25zZSgkY29udGVudCwgMjAwLCBbJ0NvbnRlbnQtVHlwZScgPT4gJ3RleHQvcGxhaW4nXSk7CiAgICB9CgogICAgLyoqCiAgICAgKiBSdW4gYSBzaXRlbWFwIHNlY3Rpb24sIGxvZ2dpbmcgKG5vdCB0aHJvd2luZykgb24gZmFpbHVyZSBzbyBvbmUKICAgICAqIGJhZCBzZWN0aW9uIGNhbiBuZXZlciB0YWtlIGRvd24gdGhlIHdob2xlIHNpdGVtYXAuCiAgICAgKi8KICAgIHByb3RlY3RlZCBmdW5jdGlvbiBzZWN0aW9uKHN0cmluZyAkbmFtZSwgY2FsbGFibGUgJGJ1aWxkLCBhcnJheSAmJHVybHMpOiB2b2lkCiAgICB7CiAgICAgICAgdHJ5IHsKICAgICAgICAgICAgJGJ1aWxkKCR1cmxzKTsKICAgICAgICB9IGNhdGNoIChUaHJvd2FibGUgJGUpIHsKICAgICAgICAgICAgTG9nOjp3YXJuaW5nKCJzaXRlbWFwOiBzZWN0aW9uICd7JG5hbWV9JyBmYWlsZWQgYW5kIHdhcyBza2lwcGVkIiwgWwogICAgICAgICAgICAgICAgJ2Vycm9yJyA9PiAkZS0+Z2V0TWVzc2FnZSgpLAogICAgICAgICAgICBdKTsKICAgICAgICB9CiAgICB9CgogICAgLyoqCiAgICAgKiBHZW5lcmF0ZSBhIHJvdXRlIFVSTCwgcmV0dXJuaW5nIG51bGwgKGFuZCBsb2dnaW5nKSBpbnN0ZWFkIG9mCiAgICAgKiB0aHJvd2luZyB3aGVuIHRoZSByb3V0ZSBvciBpdHMgcGFyYW1ldGVycyBhcmUgdW51c2FibGUg4oCUIGUuZy4gYQogICAgICogcmVjb3JkIHdpdGggYSBtaXNzaW5nIHNsdWcuCiAgICAgKi8KICAgIHByb3RlY3RlZCBmdW5jdGlvbiBzYWZlUm91dGUoc3RyaW5nICRuYW1lLCBtaXhlZCAkcGFyYW1zID0gW10pOiA/c3RyaW5nCiAgICB7CiAgICAgICAgdHJ5IHsKICAgICAgICAgICAgcmV0dXJuIHJvdXRlKCRuYW1lLCAkcGFyYW1zKTsKICAgICAgICB9IGNhdGNoIChUaHJvd2FibGUgJGUpIHsKICAgICAgICAgICAgTG9nOjp3YXJuaW5nKCJzaXRlbWFwOiBjb3VsZCBub3QgZ2VuZXJhdGUgcm91dGUgJ3skbmFtZX0nIiwgWwogICAgICAgICAgICAgICAgJ2Vycm9yJyA9PiAkZS0+Z2V0TWVzc2FnZSgpLAogICAgICAgICAgICBdKTsKCiAgICAgICAgICAgIHJldHVybiBudWxsOwogICAgICAgIH0KICAgIH0KCiAgICBwcm90ZWN0ZWQgZnVuY3Rpb24gYWRkU3RhdGljVXJscyhhcnJheSAmJHVybHMpOiB2b2lkCiAgICB7CiAgICAgICAgJHRoaXMtPnNlY3Rpb24oJ3N0YXRpYycsIGZ1bmN0aW9uICgmJHVybHMpIHsKICAgICAgICAgICAgJHN0YXRpYyA9IFsKICAgICAgICAgICAgICAgIFsncm91dGUnID0+ICdob21lJywgJ3ByaW9yaXR5JyA9PiAnMS4wJywgJ2NoYW5nZWZyZXEnID0+ICdkYWlseSddLAogICAgICAgICAgICAgICAgWydyb3V0ZScgPT4gJ2Jvb2tzJywgJ3ByaW9yaXR5JyA9PiAnMC45JywgJ2NoYW5nZWZyZXEnID0+ICdkYWlseSddLAogICAgICAgICAgICBdOwogICAgICAgICAgICAvLyBQaGFzZSA4OiBvbmx5IGxpc3QgY29tYm9zL29mZmVycyB3aGVuIHRoZWlyIGZlYXR1cmUgc3dpdGNoZXMKICAgICAgICAgICAgLy8gYXJlIG9uIOKAlCBkaXNhYmxlZCBmZWF0dXJlcyA0MDQsIGFuZCBtdXN0IG5vdCBiZSBpbmRleGVkLgogICAgICAgICAgICBpZiAoc2V0dGluZ3NfYm9vbCgnZmVhdHVyZXMuY29tYm9zJywgdHJ1ZSkpIHsKICAgICAgICAgICAgICAgICRzdGF0aWNbXSA9IFsncm91dGUnID0+ICdjb21ib3MnLCAncHJpb3JpdHknID0+ICcwLjgnLCAnY2hhbmdlZnJlcScgPT4gJ3dlZWtseSddOwogICAgICAgICAgICB9CiAgICAgICAgICAgIGlmIChzZXR0aW5nc19ib29sKCdmZWF0dXJlcy5zYWxlc19vZmZlcnMnLCB0cnVlKSkgewogICAgICAgICAgICAgICAgJHN0YXRpY1tdID0gWydyb3V0ZScgPT4gJ29mZmVycycsICdwcmlvcml0eScgPT4gJzAuOCcsICdjaGFuZ2VmcmVxJyA9PiAnd2Vla2x5J107CiAgICAgICAgICAgIH0KICAgICAgICAgICAgJHN0YXRpYyA9IGFycmF5X21lcmdlKCRzdGF0aWMsIFsKICAgICAgICAgICAgICAgIFsncm91dGUnID0+ICdhYm91dCcsICdwcmlvcml0eScgPT4gJzAuNScsICdjaGFuZ2VmcmVxJyA9PiAnbW9udGhseSddLAogICAgICAgICAgICAgICAgWydyb3V0ZScgPT4gJ2ZhcScsICdwcmlvcml0eScgPT4gJzAuNScsICdjaGFuZ2VmcmVxJyA9PiAnbW9udGhseSddLAogICAgICAgICAgICAgICAgWydyb3V0ZScgPT4gJ2NvbnRhY3QnLCAncHJpb3JpdHknID0+ICcwLjUnLCAnY2hhbmdlZnJlcScgPT4gJ21vbnRobHknXSwKICAgICAgICAgICAgICAgIFsncm91dGUnID0+ICdwcml2YWN5JywgJ3ByaW9yaXR5JyA9PiAnMC4zJywgJ2NoYW5nZWZyZXEnID0+ICd5ZWFybHknXSwKICAgICAgICAgICAgICAgIFsncm91dGUnID0+ICd0ZXJtcycsICdwcmlvcml0eScgPT4gJzAuMycsICdjaGFuZ2VmcmVxJyA9PiAneWVhcmx5J10sCiAgICAgICAgICAgICAgICBbJ3JvdXRlJyA9PiAnbm8tcmVmdW5kJywgJ3ByaW9yaXR5JyA9PiAnMC4zJywgJ2NoYW5nZWZyZXEnID0+ICd5ZWFybHknXSwKICAgICAgICAgICAgXSk7CgogICAgICAgICAgICBmb3JlYWNoICgkc3RhdGljIGFzICRzKSB7CiAgICAgICAgICAgICAgICAkbG9jID0gJHRoaXMtPnNhZmVSb3V0ZSgkc1sncm91dGUnXSk7CiAgICAgICAgICAgICAgICBpZiAoJGxvYyAhPT0gbnVsbCkgewogICAgICAgICAgICAgICAgICAgICR1cmxzW10gPSBbCiAgICAgICAgICAgICAgICAgICAgICAgICdsb2MnID0+ICRsb2MsCiAgICAgICAgICAgICAgICAgICAgICAgICdsYXN0bW9kJyA9PiBudWxsLAogICAgICAgICAgICAgICAgICAgICAgICAncHJpb3JpdHknID0+ICRzWydwcmlvcml0eSddLAogICAgICAgICAgICAgICAgICAgICAgICAnY2hhbmdlZnJlcScgPT4gJHNbJ2NoYW5nZWZyZXEnXSwKICAgICAgICAgICAgICAgICAgICBdOwogICAgICAgICAgICAgICAgfQogICAgICAgICAgICB9CiAgICAgICAgfSwgJHVybHMpOwogICAgfQoKICAgIHByb3RlY3RlZCBmdW5jdGlvbiBhZGRCb29rVXJscyhhcnJheSAmJHVybHMpOiB2b2lkCiAgICB7CiAgICAgICAgJHRoaXMtPnNlY3Rpb24oJ2Jvb2tzJywgZnVuY3Rpb24gKCYkdXJscykgewogICAgICAgICAgICBCb29rOjp3aGVyZSgnaXNfYWN0aXZlJywgdHJ1ZSktPm9yZGVyQnkoJ3VwZGF0ZWRfYXQnLCAnZGVzYycpCiAgICAgICAgICAgICAgICAtPmdldChbJ3NsdWcnLCAndXBkYXRlZF9hdCddKQogICAgICAgICAgICAgICAgLT5lYWNoKGZ1bmN0aW9uICgkYm9vaykgdXNlICgmJHVybHMpIHsKICAgICAgICAgICAgICAgICAgICBpZiAodHJpbSgoc3RyaW5nKSAkYm9vay0+c2x1ZykgPT09ICcnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIExvZzo6d2FybmluZygnc2l0ZW1hcDogYm9vayB3aXRoIGVtcHR5IHNsdWcgc2tpcHBlZCcsIFsnYm9va19pZCcgPT4gJGJvb2stPmlkID8/IG51bGxdKTsKCiAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybjsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgJGxvYyA9ICR0aGlzLT5zYWZlUm91dGUoJ2Jvb2tzLnNob3cnLCAkYm9vay0+c2x1Zyk7CiAgICAgICAgICAgICAgICAgICAgaWYgKCRsb2MgIT09IG51bGwpIHsKICAgICAgICAgICAgICAgICAgICAgICAgJHVybHNbXSA9IFsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICdsb2MnID0+ICRsb2MsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAnbGFzdG1vZCcgPT4gJGJvb2stPnVwZGF0ZWRfYXQ/LT50b0RhdGVTdHJpbmcoKSwKICAgICAgICAgICAgICAgICAgICAgICAgICAgICdwcmlvcml0eScgPT4gJzAuOScsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAnY2hhbmdlZnJlcScgPT4gJ3dlZWtseScsCiAgICAgICAgICAgICAgICAgICAgICAgIF07CiAgICAgICAgICAgICAgICAgICAgfQogICAgICAgICAgICAgICAgfSk7CiAgICAgICAgfSwgJHVybHMpOwogICAgfQoKICAgIHByb3RlY3RlZCBmdW5jdGlvbiBhZGRDYXRlZ29yeVVybHMoYXJyYXkgJiR1cmxzKTogdm9pZAogICAgewogICAgICAgICR0aGlzLT5zZWN0aW9uKCdjYXRlZ29yaWVzJywgZnVuY3Rpb24gKCYkdXJscykgewogICAgICAgICAgICAvLyBDYXRlZ29yeSBwYWdlcyBhcmUgZmlsdGVyZWQgY2F0YWxvZ3VlIFVSTHMgKG9ubHkgYWN0aXZlIGJvb2tzCiAgICAgICAgICAgIC8vIGFyZSBsaXN0ZWQgdGhlcmUsIHNvIHRoZXkgYXJlIGFsd2F5cyBpbmRleGFibGUpLgogICAgICAgICAgICBDYXRlZ29yeTo6d2hlcmUoJ2lzX2FjdGl2ZScsIHRydWUpLT5vcmRlckJ5KCd1cGRhdGVkX2F0JywgJ2Rlc2MnKQogICAgICAgICAgICAgICAgLT5nZXQoWydzbHVnJywgJ3VwZGF0ZWRfYXQnXSkKICAgICAgICAgICAgICAgIC0+ZWFjaChmdW5jdGlvbiAoJGNhdGVnb3J5KSB1c2UgKCYkdXJscykgewogICAgICAgICAgICAgICAgICAgIGlmICh0cmltKChzdHJpbmcpICRjYXRlZ29yeS0+c2x1ZykgPT09ICcnKSB7CiAgICAgICAgICAgICAgICAgICAgICAgIHJldHVybjsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICAgICAgJGxvYyA9ICR0aGlzLT5zYWZlUm91dGUoJ2Jvb2tzJywgWydjYXRlZ29yeScgPT4gJGNhdGVnb3J5LT5zbHVnXSk7CiAgICAgICAgICAgICAgICAgICAgaWYgKCRsb2MgIT09IG51bGwpIHsKICAgICAgICAgICAgICAgICAgICAgICAgJHVybHNbXSA9IFsKICAgICAgICAgICAgICAgICAgICAgICAgICAgICdsb2MnID0+ICRsb2MsCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAnbGFzdG1vZCcgPT4gJGNhdGVnb3J5LT51cGRhdGVkX2F0Py0+dG9EYXRlU3RyaW5nKCksCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAncHJpb3JpdHknID0+ICcwLjcnLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgJ2NoYW5nZWZyZXEnID0+ICd3ZWVrbHknLAogICAgICAgICAgICAgICAgICAgICAgICBdOwogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgIH0pOwogICAgICAgIH0sICR1cmxzKTsKICAgIH0KCiAgICBwcm90ZWN0ZWQgZnVuY3Rpb24gYWRkQ29tYm9VcmxzKGFycmF5ICYkdXJscyk6IHZvaWQKICAgIHsKICAgICAgICAkdGhpcy0+c2VjdGlvbignY29tYm9zJywgZnVuY3Rpb24gKCYkdXJscykgewogICAgICAgICAgICBpZiAoISBzZXR0aW5nc19ib29sKCdmZWF0dXJlcy5jb21ib3MnLCB0cnVlKSkgewogICAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICB9CiAgICAgICAgICAgIENvbWJvOjp3aGVyZSgnaXNfYWN0aXZlJywgdHJ1ZSktPm9yZGVyQnkoJ3VwZGF0ZWRfYXQnLCAnZGVzYycpCiAgICAgICAgICAgICAgICAtPmdldChbJ3NsdWcnLCAndXBkYXRlZF9hdCddKQogICAgICAgICAgICAgICAgLT5lYWNoKGZ1bmN0aW9uICgkY29tYm8pIHVzZSAoJiR1cmxzKSB7CiAgICAgICAgICAgICAgICAgICAgaWYgKHRyaW0oKHN0cmluZykgJGNvbWJvLT5zbHVnKSA9PT0gJycpIHsKICAgICAgICAgICAgICAgICAgICAgICAgcmV0dXJuOwogICAgICAgICAgICAgICAgICAgIH0KICAgICAgICAgICAgICAgICAgICAkbG9jID0gJHRoaXMtPnNhZmVSb3V0ZSgnY29tYm9zLnNob3cnLCAkY29tYm8tPnNsdWcpOwogICAgICAgICAgICAgICAgICAgIGlmICgkbG9jICE9PSBudWxsKSB7CiAgICAgICAgICAgICAgICAgICAgICAgICR1cmxzW10gPSBbCiAgICAgICAgICAgICAgICAgICAgICAgICAgICAnbG9jJyA9PiAkbG9jLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgJ2xhc3Rtb2QnID0+ICRjb21iby0+dXBkYXRlZF9hdD8tPnRvRGF0ZVN0cmluZygpLAogICAgICAgICAgICAgICAgICAgICAgICAgICAgJ3ByaW9yaXR5JyA9PiAnMC44JywKICAgICAgICAgICAgICAgICAgICAgICAgICAgICdjaGFuZ2VmcmVxJyA9PiAnd2Vla2x5JywKICAgICAgICAgICAgICAgICAgICAgICAgXTsKICAgICAgICAgICAgICAgICAgICB9CiAgICAgICAgICAgICAgICB9KTsKICAgICAgICB9LCAkdXJscyk7CiAgICB9Cn0K
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Book;
+use App\Models\Category;
+use App\Models\Combo;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+/**
+ * Serves /sitemap.xml (dynamic, cached) and /robots.txt.
+ * Only public, indexable pages are listed: the storefront, static
+ * content pages, active books and active combos. Checkout, account,
+ * cart and admin pages are intentionally excluded.
+ *
+ * Fault isolation: every URL section is built inside its own
+ * try/catch. A sitemap is crawler-facing infrastructure — one bad
+ * record (or a transient failure in one section) must degrade to
+ * "fewer URLs", never to a 500 that tells search engines the whole
+ * site is broken. Failures are logged with context so they can be
+ * fixed instead of silently ignored.
+ */
+class SitemapController extends Controller
+{
+    public function sitemap()
+    {
+        $xml = Cache::remember('sitemap.xml', now()->addHour(), function () {
+            $urls = [];
+
+            $this->addStaticUrls($urls);
+            $this->addBookUrls($urls);
+            $this->addCategoryUrls($urls);
+            $this->addComboUrls($urls);
+
+            return view('sitemap', ['urls' => $urls])->render();
+        });
+
+        return response($xml, 200, ['Content-Type' => 'application/xml']);
+    }
+
+    public function robots()
+    {
+        $content = "User-agent: *\nDisallow:\n\nSitemap: ".route('sitemap')."\n";
+
+        return response($content, 200, ['Content-Type' => 'text/plain']);
+    }
+
+    /**
+     * Run a sitemap section, logging (not throwing) on failure so one
+     * bad section can never take down the whole sitemap.
+     */
+    protected function section(string $name, callable $build, array &$urls): void
+    {
+        try {
+            $build($urls);
+        } catch (Throwable $e) {
+            Log::warning("sitemap: section '{$name}' failed and was skipped", [
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    /**
+     * Generate a route URL, returning null (and logging) instead of
+     * throwing when the route or its parameters are unusable — e.g. a
+     * record with a missing slug.
+     */
+    protected function safeRoute(string $name, mixed $params = []): ?string
+    {
+        try {
+            return route($name, $params);
+        } catch (Throwable $e) {
+            Log::warning("sitemap: could not generate route '{$name}'", [
+                'error' => $e->getMessage(),
+            ]);
+
+            return null;
+        }
+    }
+
+    protected function addStaticUrls(array &$urls): void
+    {
+        $this->section('static', function (&$urls) {
+            $static = [
+                ['route' => 'home', 'priority' => '1.0', 'changefreq' => 'daily'],
+                ['route' => 'books', 'priority' => '0.9', 'changefreq' => 'daily'],
+            ];
+            // Phase 8: only list combos/offers when their feature switches
+            // are on — disabled features 404, and must not be indexed.
+            if (settings_bool('features.combos', true)) {
+                $static[] = ['route' => 'combos', 'priority' => '0.8', 'changefreq' => 'weekly'];
+            }
+            if (settings_bool('features.sales_offers', true)) {
+                $static[] = ['route' => 'offers', 'priority' => '0.8', 'changefreq' => 'weekly'];
+            }
+            $static = array_merge($static, [
+                ['route' => 'about', 'priority' => '0.5', 'changefreq' => 'monthly'],
+                ['route' => 'faq', 'priority' => '0.5', 'changefreq' => 'monthly'],
+                ['route' => 'contact', 'priority' => '0.5', 'changefreq' => 'monthly'],
+                ['route' => 'privacy', 'priority' => '0.3', 'changefreq' => 'yearly'],
+                ['route' => 'terms', 'priority' => '0.3', 'changefreq' => 'yearly'],
+                ['route' => 'no-refund', 'priority' => '0.3', 'changefreq' => 'yearly'],
+            ]);
+
+            foreach ($static as $s) {
+                $loc = $this->safeRoute($s['route']);
+                if ($loc !== null) {
+                    $urls[] = [
+                        'loc' => $loc,
+                        'lastmod' => null,
+                        'priority' => $s['priority'],
+                        'changefreq' => $s['changefreq'],
+                    ];
+                }
+            }
+        }, $urls);
+    }
+
+    protected function addBookUrls(array &$urls): void
+    {
+        $this->section('books', function (&$urls) {
+            Book::where('is_active', true)->orderBy('updated_at', 'desc')
+                ->get(['slug', 'updated_at'])
+                ->each(function ($book) use (&$urls) {
+                    if (trim((string) $book->slug) === '') {
+                        Log::warning('sitemap: book with empty slug skipped', ['book_id' => $book->id ?? null]);
+
+                        return;
+                    }
+                    $loc = $this->safeRoute('books.show', $book->slug);
+                    if ($loc !== null) {
+                        $urls[] = [
+                            'loc' => $loc,
+                            'lastmod' => $book->updated_at?->toDateString(),
+                            'priority' => '0.9',
+                            'changefreq' => 'weekly',
+                        ];
+                    }
+                });
+        }, $urls);
+    }
+
+    protected function addCategoryUrls(array &$urls): void
+    {
+        $this->section('categories', function (&$urls) {
+            // Category pages are filtered catalogue URLs (only active books
+            // are listed there, so they are always indexable).
+            Category::where('is_active', true)->orderBy('updated_at', 'desc')
+                ->get(['slug', 'updated_at'])
+                ->each(function ($category) use (&$urls) {
+                    if (trim((string) $category->slug) === '') {
+                        return;
+                    }
+                    $loc = $this->safeRoute('books', ['category' => $category->slug]);
+                    if ($loc !== null) {
+                        $urls[] = [
+                            'loc' => $loc,
+                            'lastmod' => $category->updated_at?->toDateString(),
+                            'priority' => '0.7',
+                            'changefreq' => 'weekly',
+                        ];
+                    }
+                });
+        }, $urls);
+    }
+
+    protected function addComboUrls(array &$urls): void
+    {
+        $this->section('combos', function (&$urls) {
+            if (! settings_bool('features.combos', true)) {
+                return;
+            }
+            Combo::where('is_active', true)->orderBy('updated_at', 'desc')
+                ->get(['slug', 'updated_at'])
+                ->each(function ($combo) use (&$urls) {
+                    if (trim((string) $combo->slug) === '') {
+                        return;
+                    }
+                    $loc = $this->safeRoute('combos.show', $combo->slug);
+                    if ($loc !== null) {
+                        $urls[] = [
+                            'loc' => $loc,
+                            'lastmod' => $combo->updated_at?->toDateString(),
+                            'priority' => '0.8',
+                            'changefreq' => 'weekly',
+                        ];
+                    }
+                });
+        }, $urls);
+    }
+}
