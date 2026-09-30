@@ -146,17 +146,16 @@ class PriceDisplayTest extends TestCase
     // Rendered surfaces
     // ------------------------------------------------------------------
 
-    public function test_home_shows_save_percent_chip_and_prices(): void
+    public function test_home_shows_simple_price_without_clutter(): void
     {
         $this->saleBook();
 
         $html = $this->get('/')->assertOk()->getContent();
 
-        $this->assertStringContainsString('Save 34%', $html, 'The hero Save chip must show the discount percent, never an empty "Save %".');
-        $this->assertStringNotContainsString('Save %<', $html);
+        // Simplified homepage: clean price display, no "Save %" chip clutter.
         $this->assertStringContainsString('₹99', $html);
         $this->assertStringContainsString('₹149', $html);
-        $this->assertStringContainsString('34% off', $html);
+        $this->assertStringNotContainsString('Save %<', $html);
     }
 
     public function test_catalog_book_card_shows_sale_and_struck_original(): void

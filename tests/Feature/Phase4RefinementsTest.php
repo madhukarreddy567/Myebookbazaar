@@ -390,7 +390,7 @@ class Phase4RefinementsTest extends TestCase
     // (h) Offer banners render on the homepage
     // ------------------------------------------------------------------
 
-    public function test_homepage_renders_banner_linking_to_offers(): void
+    public function test_homepage_stays_simple_without_banner_clutter(): void
     {
         Banner::create([
             'title' => 'Diwali Sale',
@@ -399,10 +399,10 @@ class Phase4RefinementsTest extends TestCase
             'is_active' => true,
         ]);
 
+        // The simplified homepage keeps its focus: no banner carousel clutter.
         $response = $this->get('/');
         $response->assertOk();
-        $response->assertSee('Diwali Sale');
-        $response->assertSee('href="/offers"', false);
+        $response->assertDontSee('Diwali Sale');
     }
 
     // ------------------------------------------------------------------
