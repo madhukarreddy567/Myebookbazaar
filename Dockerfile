@@ -4,6 +4,7 @@ FROM php:8.3-apache
 # System dependencies and PHP extensions required by the app
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git unzip \
+        default-mysql-client \
         libzip-dev libpng-dev libjpeg-dev libfreetype6-dev \
         libonig-dev libxml2-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \

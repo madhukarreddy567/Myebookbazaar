@@ -235,7 +235,9 @@ class SupportTicketTest extends TestCase
             ->assertRedirect();
 
         $aliceTicket->refresh();
-        $reply = $aliceTicket->replies()->latest('id')->first();
+        // replies() carries ->oldest(); reorder() clears it so latest('id')
+        // truly returns the admin's reply regardless of timestamp precision.
+        $reply = $aliceTicket->replies()->reorder()->latest('id')->first();
         $this->assertTrue((bool) $reply->is_admin);
         $this->assertNull($reply->user_id);
         $this->assertSame(Ticket::STATUS_AWAITING_CUSTOMER, $aliceTicket->status);
