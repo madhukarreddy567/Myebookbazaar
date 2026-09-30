@@ -317,13 +317,9 @@ select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible {
 }
 .stripe-divider {
     width: 84px;
-    height: 8px;
-    border-radius: 4px;
-    background-image: repeating-linear-gradient(
-        var(--stripe-angle),
-        var(--color-saffron-500) 0 10px,
-        transparent 10px 22px
-    );
+    height: 6px;
+    border-radius: 3px;
+    background: var(--color-saffron-500);
 }
 
 /* ------------------------------------------------------------------
